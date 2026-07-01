@@ -11,7 +11,7 @@ A Python trading-signal agent built from the complete course notes of Vivek Sing
 python3 -m unittest discover -s tests -v
 ```
 
-All 129 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
+All 141 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
 
 ## Project structure
 
@@ -20,7 +20,8 @@ stock-picker/
 ├── sunabha_agent/
 │   ├── data/
 │   │   ├── models.py          # Candle, PriceSeries, Fundamentals, Signal — the shared data shapes
-│   │   └── universe_lists.py  # Loads the curated V40/V40Next lists from config/
+│   │   ├── universe_lists.py  # Loads the curated V40/V40Next lists from config/
+│   │   └── fetcher.py         # Screener.in fundamentals + NSE full-history OHLC (stdlib only)
 │   ├── screening/
 │   │   └── fundamental_gate.py  # V200 qualification, pledging disqualifier, ROCE/D-E tiering
 │   ├── strategies/
@@ -52,12 +53,13 @@ stock-picker/
     ├── test_turnaround_checklist.py
     ├── test_turnaround_strategy.py
     ├── test_category_engine.py
+    ├── test_fetcher.py
     └── test_lifetime_high_strategy.py
 ```
 
 ## What's built vs what's still needed
 
-### ✅ Done (129 tests passing)
+### ✅ Done (141 tests passing)
 - Data models (Candle, PriceSeries, Fundamentals, Signal, Universe enum)
 - V40/V40Next curated list loader
 - Fundamental screening gate (V200 hard gate + pledging disqualifier + ROCE/D-E tiering + soft flags)
@@ -101,13 +103,27 @@ stock-picker/
   KB never explicitly commands a sale), and `shadow_signals()` for the recommended
   track-the-other-categories feature)
 
-### 🔲 Next up (in priority order)
+- Live data fetcher (`data/fetcher.py`, fully tested offline via injected transports.
+  `ScreenerFetcher` requests the /consolidated/ URL per Section 4.11 and
+  `is_showing_consolidated()` encodes the label-inversion trap ("View Standalone" visible
+  means the page IS consolidated). TTM histories are bridged from quarterly rows via
+  rolling 4-quarter sums. `company_type` and `listed_on_nse` are caller-supplied — not
+  derivable from the page; a successful NSE pull is the natural evidence for the latter.
+  `NSEFetcher` pulls year-sized chunks from 1992 (predates NSE itself) so lifetime_high
+  always sees the FULL listing history, with cookie warm-up, dedupe, and throttling.
+  Stdlib urllib only — pyyaml remains the sole external dependency.
+  CAVEAT: parsers are tested against fixture HTML/JSON mirroring the sites' structures,
+  not yet against the live sites — expect the first real run to need selector tweaks.)
 
-**1. Live data fetcher** (`sunabha_agent/data/fetcher.py`)
-- Currently all tests use synthetic data — a real data source is needed
-- Screener.in for fundamentals (note the UI-label inversion bug documented in Section 4.11)
-- NSE for daily OHLC — must fetch FULL listing history for lifetime_high to be reliable
-  (this is flagged explicitly in models.py as a known accuracy risk)
+### 🔲 Next up
+
+The original build plan is COMPLETE: all 8 strategies, the screening gate, the Category
+engine, and the data fetcher. Natural next steps (not from the KB, pick by need):
+- A daily-scan runner wiring fetcher → gate → CategoryEngine → ranked signals for the
+  configured universe lists (the first end-to-end "what should I look at today" output)
+- Validate the fetchers against the live sites and add an on-disk cache
+- Shadow-performance persistence (Section 6.3's recommended comparison feature)
+- A V200 screening pass over the full NSE list to maintain a V200 candidate list
 
 ## Key rules that are VERY easy to get wrong (read this before coding)
 
@@ -129,4 +145,7 @@ stock-picker/
 
 - Pure Python stdlib only for all strategy/screening logic (no pandas, no numpy) — keeps the logic transparent and the test setup zero-friction.
 - `pyyaml` for config loading (the only external dependency so far).
-- The data fetcher (when built) will need `requests` or equivalent. Keep it in the fetcher only — strategy logic must remain data-source-agnostic.
+- The data fetcher ended up needing NO new dependency — it uses stdlib `urllib` +
+  `html.parser` + `http.cookiejar` ("requests or equivalent" — urllib is the equivalent).
+  All network access stays in `data/fetcher.py`; strategy logic remains data-source-agnostic,
+  and both fetchers take an injectable `transport` so tests never touch the network.
