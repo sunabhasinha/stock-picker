@@ -10,8 +10,8 @@ test against the source doc, not just against the code.
 import datetime as dt
 import unittest
 
-from vivek_agent.data.models import CompanyType, Fundamentals, Universe
-from vivek_agent.screening.fundamental_gate import (
+from sunabha_agent.data.models import CompanyType, Fundamentals, Universe
+from sunabha_agent.screening.fundamental_gate import (
     PLEDGING_DISQUALIFIER_THRESHOLD_PCT,
     debt_equity_tier,
     fails_pledging_disqualifier,

@@ -9,9 +9,9 @@ accuracy bar here, not just "does the code run."
 import datetime as dt
 import unittest
 
-from vivek_agent.data.models import CompanyType, Fundamentals, PriceSeries, Universe
-from vivek_agent.data.models import Candle
-from vivek_agent.strategies.lifetime_high_strategy import (
+from sunabha_agent.data.models import CompanyType, Fundamentals, PriceSeries, Universe
+from sunabha_agent.data.models import Candle
+from sunabha_agent.strategies.lifetime_high_strategy import (
     LTH_MIN_DECLINE_PCT,
     LifetimeHighStrategy,
     decline_from_lifetime_high_pct,
@@ -124,7 +124,7 @@ class TestLifetimeHighStrategy(unittest.TestCase):
         self.assertEqual(signals, [])
 
     def test_sell_fires_at_lifetime_high(self):
-        from vivek_agent.data.models import Signal
+        from sunabha_agent.data.models import Signal
 
         prices = make_price_series("ICICIGI", lifetime_high=100.0, current_price=100.0)
         fundamentals = make_ath_fundamentals()
@@ -148,7 +148,7 @@ class TestLifetimeHighStrategy(unittest.TestCase):
         self.assertEqual(signals[0].action, "SELL")
 
     def test_averaging_re_checks_ath_status_at_each_increment(self):
-        from vivek_agent.data.models import Signal
+        from sunabha_agent.data.models import Signal
 
         # First entry already happened at 30% down with ATH confirmed.
         # Now price has fallen to 40% down (next averaging increment) but

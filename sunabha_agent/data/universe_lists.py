@@ -13,7 +13,7 @@ from pathlib import Path
 
 import yaml
 
-from vivek_agent.data.models import CompanyType, Universe
+from sunabha_agent.data.models import CompanyType, Universe
 
 _DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "v40_v40next.yaml"
 
@@ -67,7 +67,7 @@ class UniverseRegistry:
     def universe_of(self, symbol: str) -> Universe:
         """Returns V40 / V40_NEXT / UNCLASSIFIED. Does NOT check V200 - that's
         a live quantitative screen done separately against Fundamentals
-        (see vivek_agent.screening.fundamental_gate), not a static lookup."""
+        (see sunabha_agent.screening.fundamental_gate), not a static lookup."""
         entry = self.lookup(symbol)
         return entry.universe if entry else Universe.UNCLASSIFIED
 

@@ -25,8 +25,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from vivek_agent.data.models import Candle, Fundamentals, PriceSeries, Signal, Universe
-from vivek_agent.strategies.base import Strategy
+from sunabha_agent.data.models import Candle, Fundamentals, PriceSeries, Signal, Universe
+from sunabha_agent.strategies.base import Strategy
 
 V20_MIN_MOVE_PCT = 20.0
 V20_AVERAGING_MIN_GAP_PCT = 10.0

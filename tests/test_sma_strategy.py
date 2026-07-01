@@ -10,8 +10,8 @@ buy/sell rule.
 import datetime as dt
 import unittest
 
-from vivek_agent.data.models import Candle, PriceSeries, Universe
-from vivek_agent.strategies.sma_strategy import SMAStrategy, simple_moving_average
+from sunabha_agent.data.models import Candle, PriceSeries, Universe
+from sunabha_agent.strategies.sma_strategy import SMAStrategy, simple_moving_average
 
 
 def flat_candles(price: float, n: int, start: dt.date = dt.date(2020, 1, 1)) -> list[Candle]:
@@ -92,7 +92,7 @@ class TestSMAStrategyBuySignal(unittest.TestCase):
             )
 
     def test_no_averaging_second_buy_blocked_if_already_holding(self):
-        from vivek_agent.data.models import Signal
+        from sunabha_agent.data.models import Signal
 
         candles = flat_candles(100.0, 200)
         last_date = candles[-1].date
