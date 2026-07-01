@@ -114,6 +114,36 @@ class TestV20StrategySignals(unittest.TestCase):
         sell_signals = [s for s in signals if s.action == "SELL"]
         self.assertEqual(len(sell_signals), 1)
 
+    def test_sell_fires_even_when_no_range_is_detectable_in_history(self):
+        # Regression: an open trade must ALWAYS be able to exit. The sell
+        # keys off the range levels tagged on the trade at entry time - it
+        # must not depend on the originating range still being detectable
+        # in the loaded candles (e.g. truncated history, or the green run
+        # predates the data window).
+        candles = [
+            candle(0, 100, 100, 100, 100),  # flat: no qualifying range anywhere
+            candle(1, 100, 100, 100, 100),
+            candle(2, 100, 126, 100, 125),  # price reaches the tagged upper line
+        ]
+        prices = PriceSeries(symbol="TESTCO", candles=candles)
+        existing_buy = Signal(
+            symbol="TESTCO",
+            strategy_name="V20 Strategy",
+            universe_at_signal_time=Universe.V40,
+            action="BUY",
+            trigger_date=D0,
+            signal_price=100.0,
+            target_price=125.0,
+            metadata={"range_lower": 100.0, "range_upper": 125.0},
+        )
+        signals = self.strategy.evaluate(
+            prices=prices,
+            fundamentals=None,
+            universe=Universe.V40,
+            open_trades_on_this_stock=[existing_buy],
+        )
+        self.assertEqual([s.action for s in signals], ["SELL"])
+
     def test_averaging_requires_at_least_10pct_gap_below_first_entry(self):
         # First entry at 100. A second range whose lower line is only 5%
         # below (95) must NOT trigger an average - needs >=10% gap, i.e. <=90.
