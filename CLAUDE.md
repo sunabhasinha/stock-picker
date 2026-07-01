@@ -11,7 +11,7 @@ A Python trading-signal agent built from the complete course notes of Vivek Sing
 python3 -m unittest discover -s tests -v
 ```
 
-All 111 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
+All 129 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
 
 ## Project structure
 
@@ -34,7 +34,8 @@ stock-picker/
 │   │   ├── v10_strategy.py    # Strategy 6: V10 averaging overlay on open RHS/CWH trades
 │   │   ├── turnaround_strategy.py  # Strategy 7: Three Times in Three Years (NSE-wide)
 │   │   └── lifetime_high_strategy.py  # Strategy 8: LTH (V40+V40Next, ATH TTM trigger)
-│   ├── portfolio/             # EMPTY — next to build: Category 1-4 framework
+│   ├── portfolio/
+│   │   └── category_engine.py # The four Section 6.2 Categories, ranking, reconciliation
 │   └── research/
 │       ├── turnaround_checklist.py  # Strategy 7's 10-condition checklist machinery
 │       └── claude_research.py       # Claude-backed ResearchProvider (stdlib urllib only)
@@ -50,12 +51,13 @@ stock-picker/
     ├── test_v10_strategy.py
     ├── test_turnaround_checklist.py
     ├── test_turnaround_strategy.py
+    ├── test_category_engine.py
     └── test_lifetime_high_strategy.py
 ```
 
 ## What's built vs what's still needed
 
-### ✅ Done (111 tests passing)
+### ✅ Done (129 tests passing)
 - Data models (Candle, PriceSeries, Fundamentals, Signal, Universe enum)
 - V40/V40Next curated list loader
 - Fundamental screening gate (V200 hard gate + pledging disqualifier + ROCE/D-E tiering + soft flags)
@@ -86,15 +88,22 @@ stock-picker/
   NSE gate: `Fundamentals.listed_on_nse` must be explicitly True — None refuses. Exit:
   +100% within 12 months (lapses after!), else hold to the lifetime high frozen at entry)
 - Strategy 8: Lifetime High / LTH (fully tested, including the ATH re-check on averaging)
+- Portfolio Category engine (fully tested. The four Section 6.2 presets plus
+  `custom_category()` for a user-defined "Category 5+". `CategoryEngine` requires a
+  Category — no default, per the pick-exactly-one rule. It runs the fundamental gate
+  before any strategy (Section 4.14), refuses stocks outside the category's universe,
+  and routes each strategy only ITS OWN open trades — except V10, which gets all of them
+  to find its parent RHS/CWH trade. Category 2's cross-strategy 10% entry gap is engine-
+  enforced (AVERAGE signals exempt — per-strategy gap rules govern those). Also:
+  `rank_candidates()` implements the Section 4.20 hierarchy (universe > gain > ROCE/D-E
+  tier within 5%-wide "similar gain" buckets — the bucket width is ours), Section 6.3's
+  `reconcile_holding()` (a gate-failing loss-maker gets REVIEW, not an auto-sell — the
+  KB never explicitly commands a sale), and `shadow_signals()` for the recommended
+  track-the-other-categories feature)
 
 ### 🔲 Next up (in priority order)
 
-**1. Portfolio-construction layer** (`sunabha_agent/portfolio/category_engine.py`)
-- The four named Categories from Section 6.2 of the master KB
-- Each Category is a config: which strategies are enabled + which universe
-- This is the engine's top-level "switchboard" — nothing should run without a Category selected
-
-**2. Live data fetcher** (`sunabha_agent/data/fetcher.py`)
+**1. Live data fetcher** (`sunabha_agent/data/fetcher.py`)
 - Currently all tests use synthetic data — a real data source is needed
 - Screener.in for fundamentals (note the UI-label inversion bug documented in Section 4.11)
 - NSE for daily OHLC — must fetch FULL listing history for lifetime_high to be reliable
