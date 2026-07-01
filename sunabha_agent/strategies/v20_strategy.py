@@ -106,9 +106,12 @@ class V20Strategy(Strategy):
         if len(candles) < 2:
             return []
 
+        # NOTE: no early return when no qualifying ranges exist - the SELL
+        # check below keys off the range levels tagged on each open trade's
+        # metadata at entry time, and an open trade must ALWAYS be able to
+        # exit even if its originating range is no longer detectable in the
+        # loaded history (e.g. truncated data).
         ranges = find_qualifying_ranges(candles)
-        if not ranges:
-            return []
 
         current_price = prices.latest.close
         trigger_date = prices.latest.date

@@ -11,7 +11,7 @@ A Python trading-signal agent built from the complete course notes of Vivek Sing
 python3 -m unittest discover -s tests -v
 ```
 
-All 141 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
+All 151 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
 
 ## Project structure
 
@@ -40,6 +40,7 @@ stock-picker/
 │   └── research/
 │       ├── turnaround_checklist.py  # Strategy 7's 10-condition checklist machinery
 │       └── claude_research.py       # Claude-backed ResearchProvider (stdlib urllib only)
+│   └── scan.py                # Daily-scan runner + CLI (python3 -m sunabha_agent.scan)
 ├── config/
 │   └── v40_v40next.yaml       # Curated V40/V40Next stock lists (low-turnover, hand-maintained)
 └── tests/
@@ -54,12 +55,13 @@ stock-picker/
     ├── test_turnaround_strategy.py
     ├── test_category_engine.py
     ├── test_fetcher.py
+    ├── test_scan.py
     └── test_lifetime_high_strategy.py
 ```
 
 ## What's built vs what's still needed
 
-### ✅ Done (141 tests passing)
+### ✅ Done (151 tests passing)
 - Data models (Candle, PriceSeries, Fundamentals, Signal, Universe enum)
 - V40/V40Next curated list loader
 - Fundamental screening gate (V200 hard gate + pledging disqualifier + ROCE/D-E tiering + soft flags)
@@ -115,12 +117,21 @@ stock-picker/
   CAVEAT: parsers are tested against fixture HTML/JSON mirroring the sites' structures,
   not yet against the live sites — expect the first real run to need selector tweaks.)
 
+- Daily-scan runner (`scan.py`, fully tested with fake fetchers. One selected Category
+  per scanner (no default). Default scope = curated symbols inside the category's
+  universe; V200 and NSE-wide symbols must be passed explicitly (no static list exists
+  for either). NSE price-pull success supplies `listed_on_nse=True` to fundamentals.
+  Positions JSON enables exits + Section 6.3 reconciliation; held symbols are always
+  scanned even if outside the scan list. Per-symbol errors are captured, never fatal.
+  CLI: `python3 -m sunabha_agent.scan --category category_2 [--symbols ...]
+  [--positions positions.json]`. Building it flushed out a real V20 bug: the sell check
+  used to sit behind range detection, so an open trade couldn't exit if its originating
+  range wasn't re-detectable — now fixed with a regression test.)
+
 ### 🔲 Next up
 
-The original build plan is COMPLETE: all 8 strategies, the screening gate, the Category
-engine, and the data fetcher. Natural next steps (not from the KB, pick by need):
-- A daily-scan runner wiring fetcher → gate → CategoryEngine → ranked signals for the
-  configured universe lists (the first end-to-end "what should I look at today" output)
+The build plan is COMPLETE end-to-end: all 8 strategies, screening gate, Category
+engine, data fetcher, and the daily-scan runner. Natural next steps (not from the KB):
 - Validate the fetchers against the live sites and add an on-disk cache
 - Shadow-performance persistence (Section 6.3's recommended comparison feature)
 - A V200 screening pass over the full NSE list to maintain a V200 candidate list
