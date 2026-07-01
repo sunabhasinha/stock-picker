@@ -11,7 +11,7 @@ A Python trading-signal agent built from the complete course notes of Vivek Sing
 python3 -m unittest discover -s tests -v
 ```
 
-All 87 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
+All 111 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
 
 ## Project structure
 
@@ -32,9 +32,12 @@ stock-picker/
 │   │   ├── rhs_strategy.py    # Strategy 4: Reverse H&S (V40+V40Next, human-confirmed)
 │   │   ├── cwh_strategy.py    # Strategy 5: Cup with Handle (V40+V40Next, human-confirmed)
 │   │   ├── v10_strategy.py    # Strategy 6: V10 averaging overlay on open RHS/CWH trades
+│   │   ├── turnaround_strategy.py  # Strategy 7: Three Times in Three Years (NSE-wide)
 │   │   └── lifetime_high_strategy.py  # Strategy 8: LTH (V40+V40Next, ATH TTM trigger)
 │   ├── portfolio/             # EMPTY — next to build: Category 1-4 framework
-│   └── research/              # EMPTY — next to build: Strategy 7 LLM-assisted checklist
+│   └── research/
+│       ├── turnaround_checklist.py  # Strategy 7's 10-condition checklist machinery
+│       └── claude_research.py       # Claude-backed ResearchProvider (stdlib urllib only)
 ├── config/
 │   └── v40_v40next.yaml       # Curated V40/V40Next stock lists (low-turnover, hand-maintained)
 └── tests/
@@ -45,12 +48,14 @@ stock-picker/
     ├── test_rhs_strategy.py
     ├── test_cwh_strategy.py
     ├── test_v10_strategy.py
+    ├── test_turnaround_checklist.py
+    ├── test_turnaround_strategy.py
     └── test_lifetime_high_strategy.py
 ```
 
 ## What's built vs what's still needed
 
-### ✅ Done (87 tests passing)
+### ✅ Done (111 tests passing)
 - Data models (Candle, PriceSeries, Fundamentals, Signal, Universe enum)
 - V40/V40Next curated list loader
 - Fundamental screening gate (V200 hard gate + pledging disqualifier + ROCE/D-E tiering + soft flags)
@@ -69,23 +74,27 @@ stock-picker/
   rules. RHS sells at max(technical target, lifetime high); CWH at technical target
   ONLY; V10 is an averaging overlay that needs ALL open trades passed in, not just its
   own, to see its parent RHS/CWH trade)
+- Strategy 7: Three Times in Three Years (fully tested. The 10-condition checklist lives
+  in `research/turnaround_checklist.py`: conditions 1/6/7 are computed (67% decline uses
+  the POST-PEAK trough, not current price; condition 6 is YoY per Section 4.12; condition
+  7 is current price ≥50% down), condition 2's A/B/C classification is diagnostic-only
+  with our own 10%/20% drawdown thresholds, and conditions 3-5 delegate to a pluggable
+  `ResearchProvider` — `claude_research.py` is the Claude-backed one (stdlib urllib, no
+  new deps, degrades to NEEDS_RESEARCH on any error, instructs the model to answer
+  UNCLEAR without current data). The strategy emits a BUY candidate when nothing FAILED,
+  with open research questions in the signal; `requires_human_confirmation=True` always.
+  NSE gate: `Fundamentals.listed_on_nse` must be explicitly True — None refuses. Exit:
+  +100% within 12 months (lapses after!), else hold to the lifetime high frozen at entry)
 - Strategy 8: Lifetime High / LTH (fully tested, including the ATH re-check on averaging)
 
 ### 🔲 Next up (in priority order)
 
-**1. Strategy 7: Three Times in Three Years** (`sunabha_agent/strategies/turnaround_strategy.py`)
-- This is the Claude agent piece, not pure code — it needs a tool that:
-  a) checks the quantitative conditions (67% decline, 50% still down at signal time)
-  b) calls an LLM to research "is the reason for the decline still applicable?"
-  c) returns a structured checklist output the user reviews before any trade
-- See `sunabha_agent/research/` — that's the right module for this
-
-**2. Portfolio-construction layer** (`sunabha_agent/portfolio/category_engine.py`)
+**1. Portfolio-construction layer** (`sunabha_agent/portfolio/category_engine.py`)
 - The four named Categories from Section 6.2 of the master KB
 - Each Category is a config: which strategies are enabled + which universe
 - This is the engine's top-level "switchboard" — nothing should run without a Category selected
 
-**3. Live data fetcher** (`sunabha_agent/data/fetcher.py`)
+**2. Live data fetcher** (`sunabha_agent/data/fetcher.py`)
 - Currently all tests use synthetic data — a real data source is needed
 - Screener.in for fundamentals (note the UI-label inversion bug documented in Section 4.11)
 - NSE for daily OHLC — must fetch FULL listing history for lifetime_high to be reliable

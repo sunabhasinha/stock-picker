@@ -164,6 +164,9 @@ class Fundamentals:
     sector_rank_by_profit: Optional[int] = None
     is_psu: bool = False
     under_merger: bool = False  # Section 6.4 situational risk flag
+    listed_on_nse: Optional[bool] = None  # Strategy 7 hard gate (Section 5.0):
+    # NSE-only. None means "unknown" and Strategy 7 must refuse to run - a
+    # default of True would silently wave BSE-only stocks through the gate.
 
     @property
     def weak_hands_pct(self) -> float:
