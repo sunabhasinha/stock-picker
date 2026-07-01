@@ -1,0 +1,107 @@
+# V40 and V40 Next constituent lists.
+#
+# Source: provided directly by the user (not re-derived from a video
+# transcript) - see master_strategy_kb.md, "REFERENCE DATA" section.
+# These are QUALITATIVE judgments (sector leadership, brand value, pricing
+# power - Section 1.2) that the course's creator maintains as a curated,
+# low-turnover list rather than a live quantitative screen. We treat this
+# file as the source of truth and load it, rather than trying to
+# re-derive "market leader" status algorithmically.
+#
+# Per Section 1.5 / 6.4 Q&A: this list changes rarely (the instructor cited
+# changing only ~4 stocks across 2 years). Update this file by hand when
+# the user provides a refreshed list - do not auto-regenerate it.
+
+v40:
+  - { symbol: RELIANCE, sector: Conglomerate }
+  - { symbol: LT, sector: Conglomerate }
+  - { symbol: SBIN, sector: Banks, company_type: BANK }
+  - { symbol: HDFCBANK, sector: Banks, company_type: BANK }
+  - { symbol: ICICIBANK, sector: Banks, company_type: BANK }
+  - { symbol: AXISBANK, sector: Banks, company_type: BANK }
+  - { symbol: KOTAKBANK, sector: Banks, company_type: BANK }
+  - { symbol: HCLTECH, sector: IT }
+  - { symbol: INFY, sector: IT }
+  - { symbol: TCS, sector: IT }
+  - { symbol: HDFCAMC, sector: Non-Banking, company_type: NBFC }
+  - { symbol: NAM-INDIA, sector: Non-Banking, company_type: NBFC }
+  - { symbol: HDFCLIFE, sector: Non-Banking, company_type: NBFC }
+  - { symbol: ICICIPRULI, sector: Non-Banking, company_type: NBFC }
+  - { symbol: ICICIGI, sector: Non-Banking, company_type: NBFC }
+  - { symbol: BAJAJFINSV, sector: Non-Banking, company_type: NBFC }
+  - { symbol: BAJAJHLDNG, sector: Non-Banking, company_type: NBFC }
+  - { symbol: BAJFINANCE, sector: Non-Banking, company_type: NBFC }
+  - { symbol: BAJAJ-AUTO, sector: Auto }
+  - { symbol: MARUTI, sector: Auto }
+  - { symbol: HINDUNILVR, sector: FMCG }
+  - { symbol: NESTLEIND, sector: FMCG }
+  - { symbol: PGHH, sector: FMCG }
+  - { symbol: PIDILITIND, sector: FMCG }
+  - { symbol: COLPAL, sector: FMCG }
+  - { symbol: DABUR, sector: FMCG }
+  - { symbol: TITAN, sector: Consumer Products }
+  - { symbol: PAGEIND, sector: Consumer Products }
+  - { symbol: BATAINDIA, sector: Consumer Products }
+  - { symbol: HAVELLS, sector: Consumer Products }
+  - { symbol: VOLTAS, sector: Consumer Products }
+  - { symbol: GILLETTE, sector: Consumer Products }
+  - { symbol: MARICO, sector: Consumer Products }
+  - { symbol: ITC, sector: Consumer Products }
+  - { symbol: GLAXO, sector: Pharma }
+  - { symbol: ABBOTIND, sector: Pharma }
+  - { symbol: PFIZER, sector: Pharma }
+  - { symbol: SANOFI, sector: Pharma }
+  - { symbol: ASIANPAINT, sector: Paint }
+  - { symbol: BERGERPAINT, sector: Paint }
+
+v40_next:
+  - { symbol: CDSL, sector: Financial Services }
+  - { symbol: BSE, sector: Financial Services }
+  # NOTE: user-supplied list had "JOFIN" here - flagged in the master KB as
+  # a likely typo for JIOFIN (Jio Financial Services). Kept exactly as
+  # supplied; DO NOT silently "correct" this without explicit user
+  # confirmation, since guessing wrong on a ticker symbol is worse than
+  # leaving a visible TODO.
+  - { symbol: JOFIN, sector: Financial Services, note: "UNCONFIRMED - possible typo for JIOFIN, verify before live use" }
+  - { symbol: ANGELONE, sector: Financial Services, company_type: FUNCTIONALLY_LENDING }
+  - { symbol: CAMS, sector: Financial Services }
+  - { symbol: BAJAJHFL, sector: Financial Services, company_type: NBFC }
+  - { symbol: MCX, sector: Financial Services }
+  - { symbol: ULTRACEMCO, sector: Cement }
+  - { symbol: ACC, sector: Cement }
+  - { symbol: AWL, sector: Consumer Product }
+  - { symbol: GODREJCP, sector: Consumer Product }
+  - { symbol: DIXON, sector: Consumer Product }
+  - { symbol: KAJARIACER, sector: Consumer Product }
+  - { symbol: HONAUT, sector: Consumer Product }
+  - { symbol: BLUESTARCO, sector: Consumer Product }
+  - { symbol: DMART, sector: Consumer Product }
+  - { symbol: RELAXO, sector: Consumer Product }
+  - { symbol: BOSCHLTD, sector: Auto }
+  - { symbol: EICHERMOT, sector: Auto }
+  - { symbol: MRF, sector: Auto }
+  - { symbol: M&M, sector: Auto }
+  - { symbol: TATAMOTORS, sector: Auto }
+  - { symbol: HYUNDAI, sector: Auto }
+  - { symbol: INDHOTEL, sector: Hotel }
+  - { symbol: ITCHOTELS, sector: Hotel }
+  - { symbol: UNITDSPR, sector: Beverages }
+  - { symbol: RADICO, sector: Beverages }
+  - { symbol: UBL, sector: Beverages }
+  - { symbol: VBL, sector: Beverages }
+  - { symbol: TEAMLEASE, sector: Manpower }
+  - { symbol: QUESS, sector: Manpower }
+  - { symbol: APOLLOHOSP, sector: Healthcare }
+  - { symbol: MEDANTA, sector: Healthcare }
+  - { symbol: FORTIS, sector: Healthcare }
+  - { symbol: ADANIPORTS, sector: Infra }
+  - { symbol: JSWINFRA, sector: Infra }
+  - { symbol: ASTRAZEN, sector: Pharma }
+  - { symbol: CIPLA, sector: Pharma }
+  - { symbol: LALPATHLAB, sector: Pharma }
+  - { symbol: ERIS, sector: Pharma }
+
+# V200 is intentionally NOT listed here - per master_strategy_kb.md it is a
+# pure quantitative screen (net profit > 200cr TTM, ROCE > 20% or ROE > 10%
+# for BFSI, debt/equity < 0.25), recomputed live against the screening gate
+# in vivek_agent/screening/fundamental_gate.py rather than hand-maintained.
