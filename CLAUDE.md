@@ -11,7 +11,7 @@ A Python trading-signal agent built from the complete course notes of Vivek Sing
 python3 -m unittest discover -s tests -v
 ```
 
-All 42 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
+All 59 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
 
 ## Project structure
 
@@ -26,6 +26,7 @@ stock-picker/
 │   ├── strategies/
 │   │   ├── base.py            # Strategy ABC — the interface all 8 strategies implement
 │   │   ├── sma_strategy.py    # Strategy 1: SMA (V40 only, no averaging)
+│   │   ├── knoxville_strategy.py  # Strategy 2: Knoxville Divergence (V40 only, max 2 concurrent)
 │   │   ├── v20_strategy.py    # Strategy 3: V20 (V40+V40Next+V200, max 3 concurrent)
 │   │   └── lifetime_high_strategy.py  # Strategy 8: LTH (V40+V40Next, ATH TTM trigger)
 │   ├── portfolio/             # EMPTY — next to build: Category 1-4 framework
@@ -35,48 +36,47 @@ stock-picker/
 └── tests/
     ├── test_fundamental_gate.py
     ├── test_sma_strategy.py
+    ├── test_knoxville_strategy.py
     ├── test_v20_strategy.py
     └── test_lifetime_high_strategy.py
 ```
 
 ## What's built vs what's still needed
 
-### ✅ Done (42 tests passing)
+### ✅ Done (59 tests passing)
 - Data models (Candle, PriceSeries, Fundamentals, Signal, Universe enum)
 - V40/V40Next curated list loader
 - Fundamental screening gate (V200 hard gate + pledging disqualifier + ROCE/D-E tiering + soft flags)
 - Strategy 1: SMA (fully tested, including the no-averaging and V40-only constraints)
+- Strategy 2: Knoxville Divergence (fully tested; divergence detection replicated from the
+  two open-source ports of Rob Booker's indicator cited in the module docstring — the
+  TradingView original is closed-source. Bullish = momentum rising + price falling + new
+  window low + RSI ≤30 in window; bearish is the mirror with RSI ≥70. 5% averaging gap,
+  max 2 concurrent, V40 only)
 - Strategy 3: V20 (fully tested, including single-use ranges and 10% averaging gap)
 - Strategy 8: Lifetime High / LTH (fully tested, including the ATH re-check on averaging)
 
 ### 🔲 Next up (in priority order)
 
-**1. Strategy 2: Knoxville Divergence** (`sunabha_agent/strategies/knoxville_strategy.py`)
-- Find the actual "Knoxville Divergence" Pine Script source on TradingView first
-  (the master KB explicitly flags this as a dependency rather than re-deriving it)
-- Settings: bars_back=200, RSI period=14, momentum period=20
-- Averaging: 5% gap required. Max 2 concurrent trades.
-- Universe: V40 only
-
-**2. Strategy 4/5/6: RHS, CWH, V10** (`sunabha_agent/strategies/rhs_strategy.py` etc.)
+**1. Strategy 4/5/6: RHS, CWH, V10** (`sunabha_agent/strategies/rhs_strategy.py` etc.)
 - These are geometric pattern-matching — see Section 3.1/3.2/3.3 in master KB
 - IMPORTANT: These must set `requires_human_confirmation=True` on every Signal they emit.
   The master KB flags these explicitly as "fuzzier" than the other strategies.
   The system should never auto-execute based on these alone without a human glance.
 
-**3. Strategy 7: Three Times in Three Years** (`sunabha_agent/strategies/turnaround_strategy.py`)
+**2. Strategy 7: Three Times in Three Years** (`sunabha_agent/strategies/turnaround_strategy.py`)
 - This is the Claude agent piece, not pure code — it needs a tool that:
   a) checks the quantitative conditions (67% decline, 50% still down at signal time)
   b) calls an LLM to research "is the reason for the decline still applicable?"
   c) returns a structured checklist output the user reviews before any trade
 - See `sunabha_agent/research/` — that's the right module for this
 
-**4. Portfolio-construction layer** (`sunabha_agent/portfolio/category_engine.py`)
+**3. Portfolio-construction layer** (`sunabha_agent/portfolio/category_engine.py`)
 - The four named Categories from Section 6.2 of the master KB
 - Each Category is a config: which strategies are enabled + which universe
 - This is the engine's top-level "switchboard" — nothing should run without a Category selected
 
-**5. Live data fetcher** (`sunabha_agent/data/fetcher.py`)
+**4. Live data fetcher** (`sunabha_agent/data/fetcher.py`)
 - Currently all tests use synthetic data — a real data source is needed
 - Screener.in for fundamentals (note the UI-label inversion bug documented in Section 4.11)
 - NSE for daily OHLC — must fetch FULL listing history for lifetime_high to be reliable
