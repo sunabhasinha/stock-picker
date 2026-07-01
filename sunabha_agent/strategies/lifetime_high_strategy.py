@@ -22,8 +22,8 @@ V40 / V40 Next only.
 
 from __future__ import annotations
 
-from vivek_agent.data.models import Fundamentals, PriceSeries, Signal, Universe
-from vivek_agent.strategies.base import Strategy
+from sunabha_agent.data.models import Fundamentals, PriceSeries, Signal, Universe
+from sunabha_agent.strategies.base import Strategy
 
 LTH_MIN_DECLINE_PCT = 30.0
 LTH_AVERAGING_DECLINE_INCREMENT_PCT = 10.0

@@ -31,7 +31,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from vivek_agent.data.models import CompanyType, Fundamentals, Universe
+from sunabha_agent.data.models import CompanyType, Fundamentals, Universe
 
 
 class GateResult(str, Enum):
@@ -205,7 +205,7 @@ def screen(f: Fundamentals, declared_universe: Universe) -> ScreeningReport:
     Run the full gate for one stock.
 
     `declared_universe` comes from the curated V40/V40Next list lookup (done
-    by the caller, see vivek_agent.data.universe_lists) OR is computed here
+    by the caller, see sunabha_agent.data.universe_lists) OR is computed here
     on the fly for V200 candidates. The pledging disqualifier and soft flags
     apply uniformly regardless of which universe a stock claims membership in.
     """

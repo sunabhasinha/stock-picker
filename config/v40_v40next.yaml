@@ -104,4 +104,4 @@ v40_next:
 # V200 is intentionally NOT listed here - per master_strategy_kb.md it is a
 # pure quantitative screen (net profit > 200cr TTM, ROCE > 20% or ROE > 10%
 # for BFSI, debt/equity < 0.25), recomputed live against the screening gate
-# in vivek_agent/screening/fundamental_gate.py rather than hand-maintained.
+# in sunabha_agent/screening/fundamental_gate.py rather than hand-maintained.

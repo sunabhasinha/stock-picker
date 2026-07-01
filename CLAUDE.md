@@ -1,4 +1,4 @@
-# CLAUDE.md — Vivek Trading Agent
+# CLAUDE.md — Stock Picker (Sunabha Agent)
 
 ## What this project is
 
@@ -7,7 +7,7 @@ A Python trading-signal agent built from the complete course notes of Vivek Sing
 ## Run the tests first, before touching anything
 
 ```bash
-cd vivek_trading_agent
+# from the repo root
 python3 -m unittest discover -s tests -v
 ```
 
@@ -16,8 +16,8 @@ All 42 tests must pass before any PR/commit. The tests are intentionally written
 ## Project structure
 
 ```
-vivek_trading_agent/
-├── vivek_agent/
+stock-picker/
+├── sunabha_agent/
 │   ├── data/
 │   │   ├── models.py          # Candle, PriceSeries, Fundamentals, Signal — the shared data shapes
 │   │   └── universe_lists.py  # Loads the curated V40/V40Next lists from config/
@@ -51,32 +51,32 @@ vivek_trading_agent/
 
 ### 🔲 Next up (in priority order)
 
-**1. Strategy 2: Knoxville Divergence** (`vivek_agent/strategies/knoxville_strategy.py`)
+**1. Strategy 2: Knoxville Divergence** (`sunabha_agent/strategies/knoxville_strategy.py`)
 - Find the actual "Knoxville Divergence" Pine Script source on TradingView first
   (the master KB explicitly flags this as a dependency rather than re-deriving it)
 - Settings: bars_back=200, RSI period=14, momentum period=20
 - Averaging: 5% gap required. Max 2 concurrent trades.
 - Universe: V40 only
 
-**2. Strategy 4/5/6: RHS, CWH, V10** (`vivek_agent/strategies/rhs_strategy.py` etc.)
+**2. Strategy 4/5/6: RHS, CWH, V10** (`sunabha_agent/strategies/rhs_strategy.py` etc.)
 - These are geometric pattern-matching — see Section 3.1/3.2/3.3 in master KB
 - IMPORTANT: These must set `requires_human_confirmation=True` on every Signal they emit.
   The master KB flags these explicitly as "fuzzier" than the other strategies.
   The system should never auto-execute based on these alone without a human glance.
 
-**3. Strategy 7: Three Times in Three Years** (`vivek_agent/strategies/turnaround_strategy.py`)
+**3. Strategy 7: Three Times in Three Years** (`sunabha_agent/strategies/turnaround_strategy.py`)
 - This is the Claude agent piece, not pure code — it needs a tool that:
   a) checks the quantitative conditions (67% decline, 50% still down at signal time)
   b) calls an LLM to research "is the reason for the decline still applicable?"
   c) returns a structured checklist output the user reviews before any trade
-- See `vivek_agent/research/` — that's the right module for this
+- See `sunabha_agent/research/` — that's the right module for this
 
-**4. Portfolio-construction layer** (`vivek_agent/portfolio/category_engine.py`)
+**4. Portfolio-construction layer** (`sunabha_agent/portfolio/category_engine.py`)
 - The four named Categories from Section 6.2 of the master KB
 - Each Category is a config: which strategies are enabled + which universe
 - This is the engine's top-level "switchboard" — nothing should run without a Category selected
 
-**5. Live data fetcher** (`vivek_agent/data/fetcher.py`)
+**5. Live data fetcher** (`sunabha_agent/data/fetcher.py`)
 - Currently all tests use synthetic data — a real data source is needed
 - Screener.in for fundamentals (note the UI-label inversion bug documented in Section 4.11)
 - NSE for daily OHLC — must fetch FULL listing history for lifetime_high to be reliable

@@ -17,8 +17,8 @@ from __future__ import annotations
 
 from datetime import date
 
-from vivek_agent.data.models import Fundamentals, PriceSeries, Signal, Universe
-from vivek_agent.strategies.base import Strategy
+from sunabha_agent.data.models import Fundamentals, PriceSeries, Signal, Universe
+from sunabha_agent.strategies.base import Strategy
 
 
 def simple_moving_average(closes: list[float], period: int) -> float | None:

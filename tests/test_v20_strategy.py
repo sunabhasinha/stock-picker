@@ -8,8 +8,8 @@ and the 10%-averaging-gap rule.
 import datetime as dt
 import unittest
 
-from vivek_agent.data.models import Candle, PriceSeries, Signal, Universe
-from vivek_agent.strategies.v20_strategy import V20Strategy, find_qualifying_ranges
+from sunabha_agent.data.models import Candle, PriceSeries, Signal, Universe
+from sunabha_agent.strategies.v20_strategy import V20Strategy, find_qualifying_ranges
 
 D0 = dt.date(2020, 1, 1)
 

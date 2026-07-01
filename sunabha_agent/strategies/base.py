@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from vivek_agent.data.models import Fundamentals, PriceSeries, Signal, Universe
+from sunabha_agent.data.models import Fundamentals, PriceSeries, Signal, Universe
 
 
 class Strategy(ABC):
