@@ -11,7 +11,7 @@ A Python trading-signal agent built from the complete course notes of Vivek Sing
 python3 -m unittest discover -s tests -v
 ```
 
-All 151 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
+All 161 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
 
 ## Project structure
 
@@ -40,7 +40,9 @@ stock-picker/
 │   └── research/
 │       ├── turnaround_checklist.py  # Strategy 7's 10-condition checklist machinery
 │       └── claude_research.py       # Claude-backed ResearchProvider (stdlib urllib only)
-│   └── scan.py                # Daily-scan runner + CLI (python3 -m sunabha_agent.scan)
+│   ├── scan.py                # Daily-scan runner + CLI (python3 -m sunabha_agent.scan)
+│   ├── web.py                 # Local web UI backend (python3 -m sunabha_agent.web)
+│   └── static/index.html      # The single-page scan UI (no build step, no framework)
 ├── config/
 │   └── v40_v40next.yaml       # Curated V40/V40Next stock lists (low-turnover, hand-maintained)
 └── tests/
@@ -56,12 +58,13 @@ stock-picker/
     ├── test_category_engine.py
     ├── test_fetcher.py
     ├── test_scan.py
+    ├── test_web.py
     └── test_lifetime_high_strategy.py
 ```
 
 ## What's built vs what's still needed
 
-### ✅ Done (151 tests passing)
+### ✅ Done (161 tests passing)
 - Data models (Candle, PriceSeries, Fundamentals, Signal, Universe enum)
 - V40/V40Next curated list loader
 - Fundamental screening gate (V200 hard gate + pledging disqualifier + ROCE/D-E tiering + soft flags)
@@ -114,8 +117,18 @@ stock-picker/
   `NSEFetcher` pulls year-sized chunks from 1992 (predates NSE itself) so lifetime_high
   always sees the FULL listing history, with cookie warm-up, dedupe, and throttling.
   Stdlib urllib only — pyyaml remains the sole external dependency.
-  CAVEAT: parsers are tested against fixture HTML/JSON mirroring the sites' structures,
-  not yet against the live sites — expect the first real run to need selector tweaks.)
+  LIVE-VERIFIED (July 2026): Screener.in parsing works against the real site (TITAN:
+  market cap, ROCE, shareholding, 13 quarters all correct; consolidated view confirmed).
+  NSE's own API 403s scripted clients (Akamai) — `YahooPriceFetcher` is therefore the
+  DEFAULT price source: `yfinance` (lazily imported, fetcher-only dep) pulls the full
+  listing history in one request (TITAN.NS: 7,657 candles back to 1996), split-adjusted
+  — the TradingView price basis the KB's rules assume. In-progress trading days arrive
+  as NaN and are dropped. Screener does NOT expose debt_to_equity in default top ratios
+  — it comes back None; the V200 gate treats None as failing, so V200 candidates need
+  that field from another source or a computed fallback (known gap).
+  Machine setup needed once: `pip install pyyaml yfinance` and, for python.org Python
+  on macOS, run "Install Certificates.command" or all HTTPS fetches fail with SSL
+  certificate errors.)
 
 - Daily-scan runner (`scan.py`, fully tested with fake fetchers. One selected Category
   per scanner (no default). Default scope = curated symbols inside the category's
@@ -128,11 +141,23 @@ stock-picker/
   used to sit behind range detection, so an open trade couldn't exit if its originating
   range wasn't re-detectable — now fixed with a regression test.)
 
+- Local web UI (`web.py` + `static/index.html`, live-verified in a browser. Stdlib
+  http.server bound to 127.0.0.1 only — single-user local tool, per the course's
+  explicit no-community philosophy (Section 3.5). Category picker (the four presets from
+  /api/categories), optional symbol narrowing, optional holdings JSON for exits +
+  reconciliation. Scans run as background jobs with per-symbol progress polling
+  (POST /api/scan -> job_id, GET /api/scan/<id>). DailyScanner.scan grew an optional
+  progress(done,total,symbol) callback for this. Signal cards show action/strategy/
+  universe/sizing badges, the human-confirmation warning, fundamentals line, full
+  rationale, and expandable metadata. Run: `python3 -m sunabha_agent.web` then open
+  http://127.0.0.1:8788/.)
+
 ### 🔲 Next up
 
 The build plan is COMPLETE end-to-end: all 8 strategies, screening gate, Category
 engine, data fetcher, and the daily-scan runner. Natural next steps (not from the KB):
-- Validate the fetchers against the live sites and add an on-disk cache
+- An on-disk cache for fetched data (full history per symbol per day is wasteful)
+- debt_to_equity source for the V200 gate (not in Screener's default top ratios)
 - Shadow-performance persistence (Section 6.3's recommended comparison feature)
 - A V200 screening pass over the full NSE list to maintain a V200 candidate list
 

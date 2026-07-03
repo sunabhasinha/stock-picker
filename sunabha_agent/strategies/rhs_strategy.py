@@ -89,6 +89,14 @@ def detect_rhs(candles) -> RHSPattern | None:
             continue  # head must be strictly the deepest point (rule 4)
 
         neckline = neckline_level(candles, chain)
+        if breakout.breakout_close >= neckline:
+            # Section 3.1: the buy is the right shoulder's own base breakout,
+            # BEFORE price has reached/broken the neckline. A close already
+            # at/above the neckline means this is not that entry - and, on
+            # decades-long histories, it is how a years-old neckline gets
+            # spuriously matched against today's far-higher prices (found
+            # live: TITAN "breaking out" at 4404 vs a 1201 neckline).
+            continue
         right_shoulder = candles[chain[-1] + 1 : len(candles) - 1]
         right_shoulder_low = min(c.low for c in right_shoulder)
         if right_shoulder_low <= head_low or right_shoulder_low >= neckline:

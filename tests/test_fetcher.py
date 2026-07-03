@@ -14,6 +14,7 @@ from sunabha_agent.data.fetcher import (
     FULL_HISTORY_START,
     NSEFetcher,
     ScreenerFetcher,
+    YahooPriceFetcher,
     _parse_number,
     is_showing_consolidated,
     parse_screener_html,
@@ -138,6 +139,34 @@ class TestScreenerParsing(unittest.TestCase):
         self.assertIs(self.f.listed_on_nse, True)
         # And the default is None (unknown) - never assumed True
         self.assertIsNone(parse_screener_html(FIXTURE_HTML, "TESTCO").listed_on_nse)
+
+
+class TestYahooPriceFetcher(unittest.TestCase):
+    def test_appends_nse_suffix_and_uppercases(self):
+        requested = []
+
+        def transport(yahoo_symbol):
+            requested.append(yahoo_symbol)
+            return []
+
+        YahooPriceFetcher(transport=transport).fetch_full_history("titan")
+        self.assertEqual(requested, ["TITAN.NS"])
+
+    def test_maps_rows_sorts_and_drops_nan_days(self):
+        nan = float("nan")
+        rows = [
+            {"date": dt.date(2020, 1, 7), "open": 102, "high": 106, "low": 101,
+             "close": 105, "volume": 500},
+            {"date": dt.date(2020, 1, 6), "open": 100, "high": 103, "low": 99,
+             "close": 101, "volume": 400},
+            # the in-progress trading day Yahoo returns as NaN - must be dropped
+            {"date": dt.date(2020, 1, 8), "open": nan, "high": nan, "low": nan,
+             "close": nan, "volume": 0},
+        ]
+        series = YahooPriceFetcher(transport=lambda s: rows).fetch_full_history("TITAN")
+        self.assertEqual(series.symbol, "TITAN")
+        self.assertEqual([c.date.day for c in series.candles], [6, 7])
+        self.assertEqual(series.latest.close, 105)
 
 
 class TestNSEFetcher(unittest.TestCase):
