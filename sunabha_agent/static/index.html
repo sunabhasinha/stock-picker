@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sunabha Agent — Daily Scan</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1a2233; --muted: #66708a;
+    --line: #e3e7ee; --accent: #2456e6; --green: #14804a; --red: #b42318;
+    --amber: #b25e09; --chip: #eef1f6;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.55 -apple-system, "Segoe UI", Roboto, sans-serif;
+         background: var(--bg); color: var(--ink); }
+  header { padding: 22px 28px 8px; }
+  header h1 { margin: 0; font-size: 21px; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
+  main { max-width: 1060px; margin: 0 auto; padding: 16px 28px 60px; }
+  .card { background: var(--card); border: 1px solid var(--line);
+          border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; }
+  h2 { font-size: 15px; margin: 0 0 12px; }
+  .cats { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+  .cat { border: 1.5px solid var(--line); border-radius: 9px; padding: 12px 14px;
+         cursor: pointer; transition: border-color .12s; }
+  .cat:hover { border-color: #b9c4dc; }
+  .cat.sel { border-color: var(--accent); background: #f4f7ff; }
+  .cat b { display: block; font-size: 13.5px; }
+  .cat small { color: var(--muted); display: block; margin-top: 4px; font-size: 12px; }
+  label { display: block; font-size: 12.5px; color: var(--muted); margin: 14px 0 4px; }
+  input[type=text], textarea { width: 100%; border: 1px solid var(--line); border-radius: 7px;
+    padding: 8px 10px; font: 13px ui-monospace, Menlo, monospace; background: #fbfcfe; }
+  textarea { height: 88px; resize: vertical; }
+  button { background: var(--accent); border: 0; color: #fff; border-radius: 8px;
+    padding: 10px 22px; font-size: 14.5px; font-weight: 600; cursor: pointer; margin-top: 14px; }
+  button:disabled { opacity: .5; cursor: default; }
+  .bar { height: 7px; background: var(--chip); border-radius: 4px; overflow: hidden; margin-top: 10px; }
+  .bar i { display: block; height: 100%; background: var(--accent); width: 0%; transition: width .4s; }
+  .progress-note { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+  .sig { border: 1px solid var(--line); border-radius: 9px; padding: 12px 14px; margin-bottom: 10px; }
+  .sig-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .sym { font-weight: 700; font-size: 15px; }
+  .chip { background: var(--chip); border-radius: 20px; padding: 2px 10px; font-size: 11.5px; color: var(--muted); }
+  .act { border-radius: 20px; padding: 2px 10px; font-size: 11.5px; font-weight: 700; color: #fff; }
+  .act.BUY { background: var(--green); } .act.AVERAGE { background: #0e7090; }
+  .act.SELL { background: var(--red); }
+  .confirm { color: var(--amber); font-size: 11.5px; font-weight: 700; }
+  .rationale { color: var(--muted); font-size: 12.8px; margin-top: 7px; }
+  .price { margin-left: auto; font: 600 13px ui-monospace, Menlo, monospace; }
+  .empty { color: var(--muted); font-size: 13.5px; }
+  .err { color: var(--red); font-size: 12.8px; }
+  .rec-action { font-weight: 700; font-size: 12.5px; }
+  .rec-action.EXIT_PROFITABLE { color: var(--green); }
+  .rec-action.HOLD_AWAIT_RECOVERY { color: var(--amber); }
+  .rec-action.REVIEW_QUALITY_GATE_FAILED { color: var(--red); }
+  .rec-action.STRATEGY_APPLIES { color: var(--accent); }
+  .fund { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+  details summary { cursor: pointer; font-size: 12px; color: var(--accent); margin-top: 6px; }
+  pre { background: #f3f5f9; border-radius: 6px; padding: 8px; font-size: 11px; overflow: auto; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sunabha Agent — Daily Scan</h1>
+  <p>Pick your one committed category, run the scan, review candidates. Nothing here executes trades.</p>
+</header>
+<main>
+  <div class="card">
+    <h2>1 · Category (pick exactly one — Section 6.3)</h2>
+    <div class="cats" id="cats"></div>
+    <label>Symbols (optional, comma-separated — default: the curated list within this category's universe)</label>
+    <input type="text" id="symbols" placeholder="e.g. TITAN, RELIANCE, HDFCBANK">
+    <label>Holdings (optional JSON — enables exits &amp; Section 6.3 reconciliation)</label>
+    <textarea id="positions" placeholder='{"TCS": {"average_cost": 3200, "open_trades": [{"strategy_name": "Lifetime High Strategy", "entry_price": 3100, "entry_date": "2024-02-01", "target_price": 4100}]}}'></textarea>
+    <button id="run" disabled>Run scan</button>
+    <div class="bar" id="bar" style="display:none"><i id="barfill"></i></div>
+    <div class="progress-note" id="note"></div>
+  </div>
+  <div id="results"></div>
+</main>
+<script>
+let selected = null, timer = null;
+
+const el = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+async function loadCategories() {
+  const cats = await (await fetch("/api/categories")).json();
+  el("cats").innerHTML = cats.map(c => `
+    <div class="cat" data-key="${c.key}">
+      <b>${esc(c.name)}</b>
+      <small>Universe: ${c.universes.join(" + ")}</small>
+      <small>${c.strategies.length} strateg${c.strategies.length > 1 ? "ies" : "y"}:
+        ${c.strategies.map(esc).join(", ")}</small>
+      <small>Max per stock: ${c.max_allocation_pct_per_stock}%</small>
+    </div>`).join("");
+  document.querySelectorAll(".cat").forEach(d => d.onclick = () => {
+    document.querySelectorAll(".cat").forEach(x => x.classList.remove("sel"));
+    d.classList.add("sel");
+    selected = d.dataset.key;
+    el("run").disabled = false;
+  });
+}
+
+el("run").onclick = async () => {
+  let positions = null;
+  const raw = el("positions").value.trim();
+  if (raw) {
+    try { positions = JSON.parse(raw); }
+    catch { el("note").innerHTML = '<span class="err">Holdings JSON is invalid.</span>'; return; }
+  }
+  el("run").disabled = true;
+  el("results").innerHTML = "";
+  el("bar").style.display = "block";
+  el("barfill").style.width = "2%";
+  el("note").textContent = "Starting…";
+  const res = await fetch("/api/scan", { method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ category: selected, symbols: el("symbols").value, positions }) });
+  if (!res.ok) {
+    el("note").innerHTML = `<span class="err">${esc((await res.json()).error)}</span>`;
+    el("run").disabled = false; return;
+  }
+  const { job_id } = await res.json();
+  timer = setInterval(() => poll(job_id), 1200);
+};
+
+async function poll(jobId) {
+  const job = await (await fetch("/api/scan/" + jobId)).json();
+  const p = job.progress || {};
+  if (p.total) {
+    el("barfill").style.width = Math.max(2, 100 * p.done / p.total) + "%";
+    el("note").textContent = `Scanning ${p.current_symbol} (${p.done + 1}/${p.total}) — each symbol needs a full price history + fundamentals pull…`;
+  }
+  if (job.status === "done") { finish(); render(job.report); }
+  if (job.status === "error") {
+    finish(); el("note").innerHTML = `<span class="err">Scan failed: ${esc(job.error)}</span>`;
+  }
+}
+
+function finish() {
+  clearInterval(timer);
+  el("run").disabled = false;
+  el("bar").style.display = "none";
+  el("note").textContent = "";
+}
+
+const signalCard = (s, fund) => `
+  <div class="sig">
+    <div class="sig-head">
+      <span class="sym">${esc(s.symbol)}</span>
+      <span class="act ${esc(s.action)}">${esc(s.action)}</span>
+      <span class="chip">${esc(s.strategy)}</span>
+      <span class="chip">${esc(s.universe)}</span>
+      <span class="chip">${s.suggested_position_pct}% of portfolio</span>
+      ${s.requires_human_confirmation ? '<span class="confirm">⚠ needs your confirmation</span>' : ""}
+      <span class="price">@ ${s.signal_price.toFixed(2)}${s.target_price ? " → " + s.target_price.toFixed(2) : ""}</span>
+    </div>
+    ${fund ? `<div class="fund">ROCE ${fund.roce_pct ?? "–"}% · ROE ${fund.roe_pct ?? "–"}% · D/E ${fund.debt_to_equity ?? "–"} · Promoter ${fund.promoter_holding_pct}%</div>` : ""}
+    <div class="rationale">${esc(s.rationale)}</div>
+    ${s.metadata && Object.keys(s.metadata).length ?
+      `<details><summary>details</summary><pre>${esc(JSON.stringify(s.metadata, null, 2))}</pre></details>` : ""}
+  </div>`;
+
+function render(r) {
+  let html = `<div class="card"><h2>Scan — ${esc(r.category)} — ${esc(r.as_of)} — ${r.scanned_symbols.length} symbol(s)</h2></div>`;
+  if (r.exit_signals.length)
+    html += `<div class="card"><h2>Exits — act on these first</h2>` +
+      r.exit_signals.map(s => signalCard(s, null)).join("") + `</div>`;
+  html += `<div class="card"><h2>Buy candidates — ranked (Section 4.20: universe → gain → quality tier)</h2>` +
+    (r.ranked_candidates.length
+      ? r.ranked_candidates.map((c, i) => signalCard(c.signal, c.fundamentals)).join("")
+      : `<div class="empty">None today. Per the idle-capital rule: hold cash — never substitute an out-of-category strategy to stay invested.</div>`) +
+    `</div>`;
+  if (r.reconciliations.length)
+    html += `<div class="card"><h2>Held positions — Section 6.3 reconciliation</h2>` +
+      r.reconciliations.map(x => `
+        <div class="sig">
+          <div class="sig-head"><span class="sym">${esc(x.symbol)}</span>
+          <span class="rec-action ${esc(x.action)}">${esc(x.action.replaceAll("_", " "))}</span></div>
+          <div class="rationale">${esc(x.rationale)}</div>
+        </div>`).join("") + `</div>`;
+  if (r.errors.length)
+    html += `<div class="card"><h2>Errors — symbols skipped</h2>` +
+      r.errors.map(e => `<div class="err">${esc(e)}</div>`).join("") + `</div>`;
+  el("results").innerHTML = html;
+}
+
+loadCategories();
+</script>
+</body>
+</html>

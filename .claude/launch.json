@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "scan-ui",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "sunabha_agent.web", "--port", "8788"],
+      "port": 8788
+    }
+  ]
+}
