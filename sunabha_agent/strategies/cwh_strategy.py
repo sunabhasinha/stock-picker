@@ -85,6 +85,13 @@ def detect_cwh(candles) -> CWHPattern | None:
             continue  # a handle as deep as the cup invalidates the pattern
 
         neckline = neckline_level(candles, chain)
+        if breakout.breakout_close >= neckline:
+            # Same rule and same live-data lesson as RHS: the buy is the
+            # handle's base breakout BEFORE the neckline - a close at/above
+            # the neckline means either a late entry or (on full listing
+            # histories) a years-old neckline spuriously matched against
+            # today's prices, yielding a target below the current price.
+            continue
         forming = candles[chain[-1] + 1 : len(candles) - 1]
         forming_handle_low = min(c.low for c in forming)
         if forming_handle_low <= cup_low or forming_handle_low >= neckline:

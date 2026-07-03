@@ -249,7 +249,82 @@ class ScreenerFetcher:
 
 
 # --------------------------------------------------------------------------
-# NSE daily OHLC
+# Daily OHLC - Yahoo Finance (default source)
+# --------------------------------------------------------------------------
+
+YAHOO_NSE_SUFFIX = ".NS"  # Yahoo's ticker convention for NSE listings
+
+
+class YahooPriceFetcher:
+    """
+    Full-listing-history daily OHLC via Yahoo Finance (the `yfinance`
+    library, which handles Yahoo's cookie/crumb dance). This is the
+    DEFAULT price source: live-verified to return complete history in one
+    request (e.g. TITAN.NS: 7,657 candles back to 1996), whereas NSE's own
+    API sits behind Akamai bot protection and 403s scripted clients -
+    NSEFetcher below is kept as the alternative for whoever can get past
+    that.
+
+    Yahoo's OHLC is split-adjusted (not dividend-adjusted) - the same
+    price basis a TradingView chart shows, which is what every
+    lifetime-high rule in the KB is defined against.
+
+    A successful pull of SYMBOL.NS is also the natural evidence for
+    Strategy 7's listed_on_nse gate, same as a successful NSEFetcher pull.
+
+    `yfinance` is imported lazily and only needed for the default
+    transport - the fetcher-only dependency rule (CLAUDE.md) holds, and
+    tests inject their own transport.
+    """
+
+    def __init__(self, transport: Optional[Callable[[str], list[dict]]] = None):
+        # transport: yahoo_symbol -> rows of
+        # {"date": date, "open","high","low","close": float, "volume": int-ish}
+        self._transport = transport or _yfinance_transport
+
+    def fetch_full_history(self, symbol: str) -> PriceSeries:
+        rows = self._transport(symbol.upper() + YAHOO_NSE_SUFFIX)
+        candles_by_date: dict[date, Candle] = {}
+        for row in rows:
+            values = [row.get(k) for k in ("open", "high", "low", "close")]
+            # An in-progress or halted trading day comes back NaN - drop it
+            # rather than poison lifetime_high/close with NaN.
+            if any(v is None or v != v for v in values):
+                continue
+            candle = Candle(
+                date=row["date"],
+                open=float(row["open"]),
+                high=float(row["high"]),
+                low=float(row["low"]),
+                close=float(row["close"]),
+                volume=int(row.get("volume") or 0),
+            )
+            candles_by_date[candle.date] = candle
+        return PriceSeries(
+            symbol=symbol.upper(),
+            candles=[candles_by_date[d] for d in sorted(candles_by_date)],
+        )
+
+
+def _yfinance_transport(yahoo_symbol: str) -> list[dict]:
+    import yfinance  # lazy: only the default transport needs it
+
+    frame = yfinance.Ticker(yahoo_symbol).history(period="max", auto_adjust=False)
+    return [
+        {
+            "date": index.date(),
+            "open": row.get("Open"),
+            "high": row.get("High"),
+            "low": row.get("Low"),
+            "close": row.get("Close"),
+            "volume": row.get("Volume"),
+        }
+        for index, row in frame.iterrows()
+    ]
+
+
+# --------------------------------------------------------------------------
+# NSE daily OHLC (alternative source - frequently blocked, see above)
 # --------------------------------------------------------------------------
 
 #: Predates NSE's own 1994 launch: fetching from here guarantees the FULL

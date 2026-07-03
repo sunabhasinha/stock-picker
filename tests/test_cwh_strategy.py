@@ -96,6 +96,15 @@ class TestCWHBuy(unittest.TestCase):
         self.assertIsNone(detect_rhs(cwh_candles))
         self.assertIsNotNone(detect_cwh(cwh_candles))
 
+    def test_breakout_at_or_above_neckline_is_not_an_entry(self):
+        # Same live-data regression as RHS: an old cup-and-handle neckline
+        # must not match a base breakout happening far above it years later
+        # (that produced a CWH target BELOW the current price on TITAN).
+        stale = PRIOR_DECLINE + CWH_PATTERN[:-5] + [
+            110, 150, 210, 300, 390, 400, 401, 400.5, 401.5, 410,
+        ]
+        self.assertIsNone(detect_cwh(make_candles(stale)))
+
     def test_strategy_refuses_to_run_outside_v40_and_v40next(self):
         for forbidden in (Universe.V200, Universe.UNCLASSIFIED):
             signals = evaluate(self.strategy, PRIOR_DECLINE + CWH_PATTERN,

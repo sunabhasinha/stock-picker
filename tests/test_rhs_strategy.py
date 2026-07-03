@@ -118,6 +118,18 @@ class TestRHSBuy(unittest.TestCase):
         self.assertTrue(signals[0].metadata["neckline_at_lifetime_high"])
         self.assertAlmostEqual(signals[0].target_price, 145.0)
 
+    def test_breakout_at_or_above_neckline_is_not_an_entry(self):
+        # Section 3.1: the buy is the right shoulder's base breakout BEFORE
+        # price reaches the neckline. Found live on full listing histories:
+        # without this check a years-old neckline (TITAN's 1201) matched a
+        # base breakout at today's far-higher price (4404), producing a
+        # "candidate" with a negative gain to target. A stale pattern far
+        # below today's price must yield nothing.
+        stale = PRIOR_DECLINE + RHS_PATTERN[:-5] + [
+            110, 150, 210, 300, 390, 400, 401, 400.5, 401.5, 410,
+        ]  # huge rally after the old pattern, then a base + green breakout at 410
+        self.assertIsNone(detect_rhs(make_candles(stale)))
+
     def test_strategy_refuses_to_run_outside_v40_and_v40next(self):
         for forbidden in (Universe.V200, Universe.UNCLASSIFIED):
             signals = evaluate(self.strategy, PRIOR_DECLINE + RHS_PATTERN,

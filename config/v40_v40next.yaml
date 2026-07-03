@@ -48,11 +48,11 @@ v40:
   - { symbol: MARICO, sector: Consumer Products }
   - { symbol: ITC, sector: Consumer Products }
   - { symbol: GLAXO, sector: Pharma }
-  - { symbol: ABBOTIND, sector: Pharma }
+  - { symbol: ABBOTINDIA, sector: Pharma }
   - { symbol: PFIZER, sector: Pharma }
   - { symbol: SANOFI, sector: Pharma }
   - { symbol: ASIANPAINT, sector: Paint }
-  - { symbol: BERGERPAINT, sector: Paint }
+  - { symbol: BERGEPAINT, sector: Paint }
 
 v40_next:
   - { symbol: CDSL, sector: Financial Services }

@@ -35,7 +35,7 @@ import sys
 from dataclasses import dataclass, field
 from typing import Optional
 
-from sunabha_agent.data.fetcher import NSEFetcher, ScreenerFetcher
+from sunabha_agent.data.fetcher import ScreenerFetcher, YahooPriceFetcher
 from sunabha_agent.data.models import CompanyType, Fundamentals, Signal, Universe
 from sunabha_agent.data.universe_lists import UniverseRegistry
 from sunabha_agent.portfolio.category_engine import (
@@ -117,13 +117,13 @@ class DailyScanner:
         self,
         category: Category,
         registry: Optional[UniverseRegistry] = None,
-        price_fetcher: Optional[NSEFetcher] = None,
+        price_fetcher: Optional[YahooPriceFetcher] = None,
         fundamentals_fetcher: Optional[ScreenerFetcher] = None,
         researcher: Optional[ResearchProvider] = None,
     ):
         self.engine = CategoryEngine(category, researcher)
         self.registry = registry or UniverseRegistry.from_yaml()
-        self.price_fetcher = price_fetcher or NSEFetcher()
+        self.price_fetcher = price_fetcher or YahooPriceFetcher()
         self.fundamentals_fetcher = fundamentals_fetcher or ScreenerFetcher()
 
     def default_symbols(self) -> list[str]:
@@ -138,7 +138,11 @@ class DailyScanner:
         self,
         symbols: Optional[list[str]] = None,
         positions: Optional[dict[str, Position]] = None,
+        progress: Optional[callable] = None,
     ) -> ScanReport:
+        """`progress`, if given, is called as progress(done, total, symbol)
+        before each symbol - live scans take minutes, and callers with a UI
+        (the web app) need something to show meanwhile."""
         positions = positions or {}
         symbols = symbols if symbols is not None else self.default_symbols()
         # Held stocks always get looked at, even if outside today's scan list.
@@ -151,7 +155,9 @@ class DailyScanner:
         )
         buy_candidates: list[tuple[Signal, Optional[Fundamentals]]] = []
 
-        for symbol in symbols:
+        for i, symbol in enumerate(symbols):
+            if progress is not None:
+                progress(i, len(symbols), symbol)
             position = positions.get(symbol)
             open_trades = position.open_trades if position else []
             try:
@@ -162,8 +168,8 @@ class DailyScanner:
                 fundamentals = self.fundamentals_fetcher.fetch(
                     symbol,
                     company_type=entry.company_type if entry else CompanyType.STANDARD,
-                    # The NSE price pull just succeeded - that IS the evidence
-                    # for Strategy 7's NSE-listing gate (Section 5.0).
+                    # The SYMBOL.NS price pull just succeeded - that IS the
+                    # evidence for Strategy 7's NSE-listing gate (Section 5.0).
                     listed_on_nse=True,
                 )
                 universe = self.registry.universe_of(symbol)
