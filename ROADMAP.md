@@ -19,6 +19,23 @@ fetch fails with SSL certificate errors).
 
 ---
 
+## Product pivot track (ADR-0005 — multi-user hosted app)
+
+Staged milestones, each its own spec + PR. The engine stays a pure library
+throughout; the shell carries the dependencies.
+
+- **M1 — user data layer** (`docs/specs/user-data-layer.md`, proposed):
+  Supabase Postgres + SQLAlchemy + Alembic; portfolios/holdings/
+  signal_events/scan_runs/shadow_signals; RLS from day one; proven against
+  existing single-user flows.
+- **M2 — auth**: Supabase Auth login/logout, portfolios bound to users,
+  hosted serving (amends AGENTS.md #6 when it ships).
+- **M3 — product**: per-user dashboard, confirm/dismiss on signals,
+  scheduled scans writing signal_events.
+
+Note: pivot items subsume parts of the backlog below (shadow-performance
+persistence lands in M1's shadow_signals table).
+
 ## Backlog (in order of practical value)
 
 ### 1. On-disk cache for fetched data
