@@ -99,6 +99,18 @@ Template:
   4 backfilled ADRs, 6 MODULE.md cards, CI workflow + drift check,
   CLAUDE.md pointer, branch, PR
 
+## 2026-07-12 — Product pivot kickoff: ADR-0005 + M1 spec (docs only)
+- Stepped in: no (direction set explicitly: prod app, DB first, staged)
+- Agent guessed: no — the load-bearing choices (Supabase Postgres, managed
+  auth, engine purity, staged milestones) were recommended and accepted in
+  discussion before writing; recorded in ADR-0005 rather than as silent
+  defaults
+- Caught late: no (no code — documents only, per our own workflow: spec
+  and decision before schema)
+- Chores: ADR-0005, docs/specs/user-data-layer.md, ROADMAP pivot track,
+  journal. CI workflow still parked on ci-workflow branch awaiting token
+  workflow scope.
+
 ---
 
 # Reviews
