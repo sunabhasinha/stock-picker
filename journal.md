@@ -78,6 +78,27 @@ Template:
 - Caught late: no
 - Chores: doc commit on branch; no code (discussion session)
 
+## 2026-07-11 — OBSERVE setup: global CLAUDE.md, journal.md, PR #9
+- Stepped in: no
+- Agent guessed: yes — user asked for "a CLAUDE.md for this project too";
+  project already had a load-bearing one, so created journal.md instead of
+  overwriting (confirmed by outcome)
+- Caught late: no
+- Chores: created ~/.claude/CLAUDE.md (journaling habit + working habits),
+  backfilled journal from PRs 1-8, committed on branch, PR #9, merged, sync
+
+## 2026-07-12 — L1-L5 context-layer scaffold (agentic-SDLC orchestration)
+- Stepped in: yes — redirected from "build the holdings UI page" to "build
+  the orchestration instead"; the worked example became the seeded spec
+- Agent guessed: yes — kept CLAUDE.md as the Claude adapter rather than
+  gutting it, AGENTS.md made the authority (recorded in ADR-0001); drift
+  gate escape hatch chosen as a commit-message marker
+- Caught late: no (drift script self-tested on fail/pass/opt-out paths
+  before trusting it in CI)
+- Chores: AGENTS.md, docs/specs (README+template+holdings example),
+  4 backfilled ADRs, 6 MODULE.md cards, CI workflow + drift check,
+  CLAUDE.md pointer, branch, PR
+
 ---
 
 # Reviews
