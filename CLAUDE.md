@@ -154,8 +154,8 @@ stock-picker/
 
 ### 🔲 Next up
 
-The build plan is COMPLETE end-to-end: all 8 strategies, screening gate, Category
-engine, data fetcher, and the daily-scan runner. Natural next steps (not from the KB):
+The build plan is COMPLETE end-to-end. **The maintained backlog lives in `ROADMAP.md`**
+(with per-item context for picking work up cold). Summary:
 - An on-disk cache for fetched data (full history per symbol per day is wasteful)
 - debt_to_equity source for the V200 gate (not in Screener's default top ratios)
 - Shadow-performance persistence (Section 6.3's recommended comparison feature)
