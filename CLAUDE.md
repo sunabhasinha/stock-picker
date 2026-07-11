@@ -1,5 +1,11 @@
 # CLAUDE.md — Stock Picker (Sunabha Agent)
 
+> **Read `AGENTS.md` first** — it is the tool-agnostic constitution (L1) and
+> the authority if the two ever disagree (ADR-0001). This file is the Claude
+> adapter carrying the detailed build state and history. The context layers:
+> specs in `docs/specs/`, decisions in `docs/decisions/`, per-module maps in
+> `MODULE.md` files, learning loop in `journal.md`, backlog in `ROADMAP.md`.
+
 ## What this project is
 
 A Python trading-signal agent built from the complete course notes of Vivek Singhal's stock market workshop. The **single source of truth** for all strategy rules, thresholds, and rationale is `master_strategy_kb.md` (in the root of the repo, or download from the chat session that built this). Every threshold in the code should trace back to a section number in that doc. If you're unsure whether a rule is implemented correctly, check the doc — not intuition.
