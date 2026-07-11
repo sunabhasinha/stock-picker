@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        # yfinance/psycopg not needed: tests inject transports and run the
+        # ORM on SQLite. sqlalchemy+alembic let the app/ shell tests run
+        # rather than skip.
+        run: pip install pyyaml sqlalchemy alembic
+      - name: Run test suite (the L5 gate)
+        run: python3 -m unittest discover -s tests -v
+
+  doc-drift:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Module cards updated alongside source (ADR-0001)
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          python3 .github/scripts/check_doc_drift.py origin/${{ github.base_ref }}
