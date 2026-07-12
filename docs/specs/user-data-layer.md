@@ -1,5 +1,5 @@
 # Spec: User data layer (product pivot, milestone 1)
-status: proposed
+status: done (applied to Supabase 2026-07-13 — six tables, RLS active, seeded user verified in dashboard)
 governed by: ADR-0005
 
 Goal: a persistent data layer for user data — portfolios, holdings, signal

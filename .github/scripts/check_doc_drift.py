@@ -29,6 +29,8 @@ def git(*args: str) -> str:
 
 def module_card_for(path: str) -> str | None:
     """Map a changed source file to the MODULE.md that must accompany it."""
+    if path.startswith("app/") and path.endswith(".py"):
+        return "app/MODULE.md"  # the application shell (ADR-0005 zone 2)
     if not path.startswith(f"{PACKAGE}/") or not (
         path.endswith(".py") or path.startswith(f"{PACKAGE}/static/")
     ):
@@ -36,7 +38,7 @@ def module_card_for(path: str) -> str | None:
     parts = path.split("/")
     if len(parts) >= 3 and parts[1] in SUBMODULES:
         return f"{PACKAGE}/{parts[1]}/MODULE.md"
-    return f"{PACKAGE}/MODULE.md"  # top-level app layer (scan.py, web.py, static/)
+    return f"{PACKAGE}/MODULE.md"  # engine app layer (scan.py, web.py, static/)
 
 
 def main() -> int:
