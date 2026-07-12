@@ -23,9 +23,11 @@ in this repo's history (see journal.md review 2026-07-11).
 2. Pattern/turnaround signals always set `requires_human_confirmation=True`.
 3. Quarterly comparisons are YoY, never sequential QoQ (KB §4.12).
 4. `lifetime_high` requires FULL listing history — never truncate price data.
-5. Dependencies: stdlib-only for strategy/screening/portfolio/web logic;
-   `pyyaml` (config) and `yfinance` (fetcher-only, lazily imported) are the
-   only exceptions. New deps require an ADR.
+5. Dependencies — two zones (ADR-0005): the ENGINE (`sunabha_agent/`) is
+   stdlib-only, with `pyyaml` (config) and `yfinance` (fetcher-only, lazily
+   imported) the only exceptions, and NEVER imports `app/`. The application
+   SHELL (`app/`) may carry dependencies (`app/requirements.txt`). New
+   engine deps require an ADR.
 6. Web UI binds to 127.0.0.1 only — single-user local tool by design.
 
 ## Context layers — where everything lives

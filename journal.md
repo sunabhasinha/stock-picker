@@ -111,6 +111,24 @@ Template:
   journal. CI workflow still parked on ci-workflow branch awaiting token
   workflow scope.
 
+## 2026-07-12 — M1: user data layer (app/ shell, first two-zone PR)
+- Stepped in: no (built from the spec + ADR-0005 alone — the cold-start test)
+- Agent guessed: yes — recorded in code/card: open_trades stored as JSON
+  (trades are strategy-owned snapshots, not a fourth table); tests run the
+  ORM on in-memory SQLite while the Postgres-only migration (JSONB, RLS) is
+  validated via offline SQL generation; RLS keys on current_setting
+  ('app.user_id') so local Postgres works, auth.uid() swap deferred to M2
+- Caught late: no (engine purity enforced by a mechanical test, not habit)
+- Chores: app/ package (models, repository, session, alembic + migration
+  0001), 8 new tests (169), app/MODULE.md, drift gate learned the app/
+  zone, AGENTS.md invariant #5 rewritten for two zones, CLAUDE.md, spec
+  status. Exit criterion MET 2026-07-13: user applied migration 0001 to
+  their Supabase project themselves (secret never entered agent context) —
+  six tables + RLS + seeded user verified in the dashboard. Friction log
+  for review: zsh comment gotcha, missing psycopg driver, @-in-password
+  URL parsing, direct-vs-pooler host, stale shell env after editing .env,
+  and a password FRAGMENT leaking via a traceback (password rotated).
+
 ---
 
 # Reviews

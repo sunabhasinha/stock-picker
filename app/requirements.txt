@@ -1,0 +1,5 @@
+# Application-shell dependencies (ADR-0005). The engine (sunabha_agent/)
+# stays stdlib-only per ADR-0002 and never imports these.
+sqlalchemy>=2.0
+alembic>=1.13
+psycopg[binary]>=3.1   # Postgres driver; tests run on SQLite and don't need it

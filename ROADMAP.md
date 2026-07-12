@@ -24,7 +24,7 @@ fetch fails with SSL certificate errors).
 Staged milestones, each its own spec + PR. The engine stays a pure library
 throughout; the shell carries the dependencies.
 
-- **M1 — user data layer** (`docs/specs/user-data-layer.md`, proposed):
+- **M1 — user data layer** (`docs/specs/user-data-layer.md`, DONE 2026-07-13):
   Supabase Postgres + SQLAlchemy + Alembic; portfolios/holdings/
   signal_events/scan_runs/shadow_signals; RLS from day one; proven against
   existing single-user flows.

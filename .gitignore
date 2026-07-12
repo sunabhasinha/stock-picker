@@ -5,3 +5,8 @@ __pycache__/
 dist/
 build/
 .venv/
+
+# secrets - never committed, never read by agents
+.env
+.env.*
+!.env.example
