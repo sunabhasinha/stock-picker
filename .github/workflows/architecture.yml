@@ -1,0 +1,27 @@
+name: Architecture diagram
+
+# The block diagram (docs/architecture.md) is GENERATED from the code by
+# .github/scripts/generate_architecture.py. This workflow fails any PR
+# where the committed diagram no longer matches the code - same
+# stays-current-or-fails philosophy as the doc-drift gate (ADR-0001).
+
+on:
+  pull_request:
+
+jobs:
+  diagram-current:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Regenerate and compare
+        run: |
+          python3 .github/scripts/generate_architecture.py
+          if ! git diff --exit-code docs/architecture.md; then
+            echo ""
+            echo "docs/architecture.md is stale. Regenerate and commit:"
+            echo "  python3 .github/scripts/generate_architecture.py"
+            exit 1
+          fi

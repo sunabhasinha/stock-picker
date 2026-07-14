@@ -164,6 +164,18 @@ Template:
   log by design; the page's vague message is enumeration resistance
   working, but first-run UX should say where to look in dev mode.
 
+## 2026-07-14 — M2 merged (PR #14) + architecture diagram workflow
+- Stepped in: no (M2 merge was the user's gate; CI green on maiden run)
+- Agent guessed: yes — tool choice for the requested block diagram:
+  Mermaid GENERATED from ast import analysis (not hand-drawn, not an
+  image), enforced stale-or-fail by a dedicated workflow; growth plan =
+  L0 zones forever + L1 per-package, L2 split past ~12 packages
+- Caught late: no (generator determinism + edge honesty covered by 3
+  tests; the diagram already renders the M2 auth topology correctly)
+- Chores: sync after #14, generator script + workflow + generated doc +
+  tests (189), this entry. ADR-0007 + react-frontend spec drafted and
+  awaiting the react build to ride with.
+
 ---
 
 # Reviews
