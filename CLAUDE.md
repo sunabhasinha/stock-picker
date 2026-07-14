@@ -17,7 +17,7 @@ A Python trading-signal agent built from the complete course notes of Vivek Sing
 python3 -m unittest discover -s tests -v
 ```
 
-All 169 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
+All 186 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
 
 ## Project structure
 
@@ -50,9 +50,12 @@ stock-picker/
 │   ├── web.py                 # Local web UI backend (python3 -m sunabha_agent.web)
 │   └── static/index.html      # The single-page scan UI (no build step, no framework)
 ├── app/                       # The application SHELL (ADR-0005) — dependency-bearing zone
-│   ├── db/                    # models.py, repository.py, session.py (SQLAlchemy 2.0)
-│   ├── migrations/            # Alembic; RLS from migration 0001; DATABASE_URL via env
-│   └── requirements.txt       # sqlalchemy, alembic, psycopg — shell only, engine never
+│   ├── db/                    # models.py, repository.py, session.py (+rls_transaction)
+│   ├── auth/                  # M2 own auth (ADR-0006): argon2id, sessions, flows
+│   ├── server.py              # FastAPI product API (uvicorn app.server:app; docs at /docs)
+│   ├── static/auth.html       # minimal register/login page
+│   ├── migrations/            # Alembic; RLS from 0001; app_rls role from 0002
+│   └── requirements.txt       # shell-only deps (engine never imports these)
 ├── config/
 │   └── v40_v40next.yaml       # Curated V40/V40Next stock lists (low-turnover, hand-maintained)
 └── tests/
@@ -70,12 +73,13 @@ stock-picker/
     ├── test_scan.py
     ├── test_web.py
     ├── test_app_db.py
+    ├── test_auth.py
     └── test_lifetime_high_strategy.py
 ```
 
 ## What's built vs what's still needed
 
-### ✅ Done (169 tests passing)
+### ✅ Done (186 tests passing)
 - Data models (Candle, PriceSeries, Fundamentals, Signal, Universe enum)
 - V40/V40Next curated list loader
 - Fundamental screening gate (V200 hard gate + pledging disqualifier + ROCE/D-E tiering + soft flags)

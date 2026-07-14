@@ -28,8 +28,10 @@ throughout; the shell carries the dependencies.
   Supabase Postgres + SQLAlchemy + Alembic; portfolios/holdings/
   signal_events/scan_runs/shadow_signals; RLS from day one; proven against
   existing single-user flows.
-- **M2 — auth**: Supabase Auth login/logout, portfolios bound to users,
-  hosted serving (amends AGENTS.md #6 when it ships).
+- **M2 — auth** (`docs/specs/auth-layer.md`, ADR-0006, DONE 2026-07-13): OWN auth,
+  learning-weighted — argon2id, server-side opaque sessions, verification/
+  reset flows, throttling, FastAPI server. Hosted serving still pending
+  (amends AGENTS.md #6 when it ships).
 - **M3 — product**: per-user dashboard, confirm/dismiss on signals,
   scheduled scans writing signal_events.
 

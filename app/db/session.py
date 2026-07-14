@@ -9,8 +9,10 @@ the Supabase string can be pasted verbatim.
 from __future__ import annotations
 
 import os
+import uuid
+from contextlib import contextmanager
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
 
@@ -33,3 +35,34 @@ def make_engine(url: str | None = None):
 
 def make_session_factory(url: str | None = None) -> sessionmaker[Session]:
     return sessionmaker(bind=make_engine(url), expire_on_commit=False)
+
+
+@contextmanager
+def rls_transaction(factory: sessionmaker[Session], user_id: uuid.UUID):
+    """
+    One request's user-data transaction under the RLS enforcement chain
+    (ADR-0006 clause 4): assume the non-owner app_rls role and set the
+    transaction-local user id the M1 policies key on. SET LOCAL reverts
+    automatically at transaction end - the elevated (owner) role never
+    leaks past the request.
+
+    On non-Postgres engines (the SQLite test suite) the SETs are skipped:
+    those tests exercise application-level scoping (layer 1); the RLS
+    layer (layer 2) is exercised against real Postgres (gated test) and
+    in production.
+    """
+    session = factory()
+    try:
+        if session.get_bind().dialect.name == "postgresql":
+            session.execute(text("SET LOCAL ROLE app_rls"))
+            session.execute(
+                text("SELECT set_config('app.user_id', :uid, true)"),
+                {"uid": str(user_id)},
+            )
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
