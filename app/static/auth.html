@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sunabha Agent — Sign in</title>
+<style>
+  body { font: 15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
+         background: #f6f7f9; color: #1a2233; display: grid;
+         place-items: center; min-height: 100vh; margin: 0; }
+  .card { background: #fff; border: 1px solid #e3e7ee; border-radius: 10px;
+          padding: 26px 28px; width: 340px; }
+  h1 { font-size: 17px; margin: 0 0 4px; }
+  p { color: #66708a; font-size: 12.5px; margin: 0 0 16px; }
+  label { display: block; font-size: 12px; color: #66708a; margin: 10px 0 4px; }
+  input { width: 100%; box-sizing: border-box; border: 1px solid #e3e7ee;
+          border-radius: 7px; padding: 9px 10px; font-size: 14px; }
+  button { width: 100%; margin-top: 16px; background: #2456e6; color: #fff;
+           border: 0; border-radius: 8px; padding: 10px; font-size: 14.5px;
+           font-weight: 600; cursor: pointer; }
+  .alt { margin-top: 12px; text-align: center; font-size: 12.5px; }
+  .alt a { color: #2456e6; cursor: pointer; }
+  #msg { margin-top: 12px; font-size: 12.5px; min-height: 18px; }
+  #msg.ok { color: #14804a; } #msg.err { color: #b42318; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1 id="title">Sign in</h1>
+  <p>Sunabha Agent — signals for a human to review. Nothing executes trades.</p>
+  <label>Email</label>
+  <input id="email" type="email" autocomplete="username">
+  <label>Password</label>
+  <input id="password" type="password" autocomplete="current-password">
+  <button id="go">Sign in</button>
+  <div class="alt"><a id="toggle">Create an account instead</a></div>
+  <div id="msg"></div>
+</div>
+<script>
+let registering = false;
+const el = id => document.getElementById(id);
+el("toggle").onclick = () => {
+  registering = !registering;
+  el("title").textContent = registering ? "Create account" : "Sign in";
+  el("go").textContent = registering ? "Register" : "Sign in";
+  el("toggle").textContent = registering ? "Sign in instead" : "Create an account instead";
+  el("msg").textContent = "";
+};
+el("go").onclick = async () => {
+  const body = JSON.stringify({ email: el("email").value, password: el("password").value });
+  const res = await fetch(registering ? "/auth/register" : "/auth/login",
+    { method: "POST", headers: {"Content-Type": "application/json"}, body });
+  const msg = el("msg");
+  if (res.status === 204) { msg.className = "ok"; msg.textContent = "Signed in.";
+    const me = await (await fetch("/api/me")).json();
+    msg.textContent = `Signed in as ${me.email}.`;
+  } else {
+    const data = await res.json().catch(() => ({}));
+    msg.className = res.ok ? "ok" : "err";
+    msg.textContent = data.detail || (res.ok ? "Done." : "Failed.");
+  }
+};
+</script>
+</body>
+</html>

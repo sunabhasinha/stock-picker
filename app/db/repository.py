@@ -52,6 +52,18 @@ class Repository:
             self.session.flush()
         return user
 
+    def portfolios_for_user(self, user_id: uuid.UUID) -> list[Portfolio]:
+        """Explicitly filtered by user_id (layer 1) even though RLS (layer
+        2) would filter identically under app_rls - defense in depth means
+        neither layer assumes the other."""
+        return list(
+            self.session.scalars(
+                select(Portfolio)
+                .where(Portfolio.user_id == user_id)
+                .order_by(Portfolio.created_at)
+            )
+        )
+
     def create_portfolio(
         self,
         user_id: uuid.UUID,

@@ -129,6 +129,41 @@ Template:
   URL parsing, direct-vs-pooler host, stale shell env after editing .env,
   and a password FRAGMENT leaking via a traceback (password rotated).
 
+## 2026-07-13 — M1 merged (PR #12) + CI gates live (PR #13)
+- Stepped in: no (user ran gh auth refresh themselves - account action)
+- Agent guessed: yes — rebased the parked ci-workflow branch onto main and
+  amended it to install sqlalchemy+alembic so app/ shell tests run in CI
+  rather than skip (psycopg/yfinance still deliberately absent)
+- Caught late: no — CI's maiden run green on both jobs (tests 169, drift 6s)
+- Chores: sync after #12, rebase/amend/push parked branch, PR #13, watch
+  first CI run, sync after #13. All loose ends now closed; next: M2 spec.
+
+## 2026-07-13 — M2 auth: spec + ADR-0006 pivot + implementation
+- Stepped in: yes — TWICE, both load-bearing: (1) asked for the managed-vs-
+  own-auth trade-off before approving the spec; (2) chose to weight
+  LEARNING, pivoting ADR-0006 from Supabase Auth to library-assisted own
+  auth. The workflow's review point did its job: the pivot happened in
+  documents, before code.
+- Agent guessed: yes — recorded in MODULE.md/service.py: session TTL 7d,
+  token TTLs 24h/1h, lockout 5/email + 20/IP per 15min, min password 10;
+  JWTs dropped for server-side opaque sessions (revocability); app_rls as
+  NOLOGIN role assumed via SET LOCAL ROLE (no second credential).
+- Caught late: near-miss caught during implementation — failed-login
+  rollback would have erased the throttling ledger (attempt now commits
+  before the raise). RLS-layer cross-user test requires Postgres: gated
+  on TEST_DATABASE_URL, skips on CI (documented).
+- Chores: spec + ADR rewrite, migration 0002, app/auth package, FastAPI
+  server + static page, 17 new tests (186), MODULE.md/.env.example/
+  CLAUDE.md/ROADMAP updates. Exit criterion MET: migration 0002 applied
+  (Supabase killed the pooled connection on the bare GRANT-to-postgres —
+  worked around via dashboard SQL editor + pg_has_role guard in the
+  migration), register->verify->login walked in the browser.
+  Friction log: (1) connection string pasted into env.py by accident —
+  removed, rotation advised, SECOND paste-leak incident -> review item;
+  (2) "no email sent" confusion — the dev transport prints to the server
+  log by design; the page's vague message is enumeration resistance
+  working, but first-run UX should say where to look in dev mode.
+
 ---
 
 # Reviews
