@@ -32,8 +32,11 @@ throughout; the shell carries the dependencies.
   learning-weighted — argon2id, server-side opaque sessions, verification/
   reset flows, throttling, FastAPI server. Hosted serving still pending
   (amends AGENTS.md #6 when it ships).
-- **M3 — product**: per-user dashboard, confirm/dismiss on signals,
-  scheduled scans writing signal_events.
+- **M3 — product**: step 1 DONE 2026-07-16 (`docs/specs/react-frontend.md`,
+  ADR-0007): frontend/ zone — React+TS+shadcn auth pages + authenticated
+  shell, OpenAPI-generated types, same-origin serving. Remaining: the
+  dashboard itself (signals list, confirm/dismiss, scan-on-demand),
+  scheduled scans writing signal_events, hosted deployment.
 
 Note: pivot items subsume parts of the backlog below (shadow-performance
 persistence lands in M1's shadow_signals table).

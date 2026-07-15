@@ -84,7 +84,8 @@ class AuthService:
         self._send_flow_token(
             user, "verify_email", VERIFY_TOKEN_TTL,
             subject="Verify your email",
-            path="/auth/verify",
+            path="/verify",  # the SPA page (it calls the API); friendlier
+            # landing than raw JSON - falls back gracefully via SPA routing
         )
 
     def verify_email(self, token: str) -> None:
@@ -170,7 +171,7 @@ class AuthService:
         self._send_flow_token(
             user, "reset_password", RESET_TOKEN_TTL,
             subject="Reset your password",
-            path="/auth/password-reset/confirm",
+            path="/reset",  # SPA page with the new-password form
         )
 
     def confirm_password_reset(self, token: str, new_password: str) -> None:

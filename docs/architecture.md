@@ -20,6 +20,7 @@ flowchart LR
     user(["User / Browser"])
     eng["Engine (pure Python, KB-traceable)"]
     shell["Shell (FastAPI, auth, DB)"]
+    fe["Frontend (React + TypeScript)"]
     ext_claude(("Claude API"))
     ext_nse(("NSE"))
     ext_postgres(("Supabase Postgres"))
@@ -29,9 +30,11 @@ flowchart LR
     eng --> ext_nse
     eng --> ext_screener
     eng --> ext_yahoo
+    fe --> shell
     shell --> eng
     shell --> ext_postgres
     user --> eng
+    user --> fe
     user --> shell
 ```
 
@@ -98,7 +101,20 @@ flowchart TD
 
 ## L1 — Zone 3 — Frontend (React + TypeScript)
 
-_(zone not present yet)_
+```mermaid
+flowchart TD
+    subgraph fe_zone["Zone 3 — Frontend (React + TypeScript)"]
+        fe_api["api"]
+        fe_components["components"]
+        fe_lib["lib"]
+        fe_main["main<br/><i>SPA entry</i>"]
+        fe_pages["pages"]
+    end
+    fe_components --> fe_lib
+    fe_pages --> fe_api
+    fe_pages --> fe_components
+    fe_pages --> shell_x_server["app/server"]
+```
 
 ## Reading guide
 

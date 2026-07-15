@@ -246,6 +246,17 @@ class TestOriginCheck(AuthTestCase):
         )
         self.assertEqual(response.status_code, 204)
 
+    def test_localhost_and_loopback_are_the_same_origin(self):
+        # Found live: base_url says 127.0.0.1 but users legitimately browse
+        # localhost - same machine, same port, must not be 403'd.
+        self.register_and_verify()
+        response = self.client.post(
+            "/auth/login",
+            json={"email": self.EMAIL, "password": self.PASSWORD},
+            headers={"Origin": "http://localhost:8000"},
+        )
+        self.assertEqual(response.status_code, 204)
+
 
 class TestNoSecretsInResponses(AuthTestCase):
     def test_no_hash_or_token_material_leaks_through_the_api(self):
@@ -256,6 +267,30 @@ class TestNoSecretsInResponses(AuthTestCase):
         self.assertNotIn("password", text)
         self.assertNotIn("hash", text)
         self.assertNotIn("$argon2", me.text)
+
+
+@unittest.skipUnless(HAS_SHELL_DEPS, "shell deps not installed")
+class TestSPAServing(AuthTestCase):
+    """ADR-0007: FastAPI serves the built React app same-origin. Skips
+    when frontend/dist hasn't been built (CI's frontend job builds it)."""
+
+    def setUp(self):
+        from app.server import FRONTEND_DIST
+        if not FRONTEND_DIST.exists():
+            self.skipTest("frontend/dist not built (run: cd frontend && npm run build)")
+        super().setUp()
+
+    def test_spa_routes_serve_index_html(self):
+        for path in ("/", "/login", "/register", "/verify", "/reset"):
+            response = self.client.get(path)
+            self.assertEqual(response.status_code, 200, path)
+            self.assertIn("text/html", response.headers["content-type"])
+            self.assertIn(b'<div id="root">', response.content)
+
+    def test_unknown_api_paths_stay_json_404(self):
+        response = self.client.get("/api/definitely-not-a-route")
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("application/json", response.headers["content-type"])
 
 
 @unittest.skipUnless(HAS_SHELL_DEPS, "shell deps not installed")
