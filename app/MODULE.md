@@ -14,6 +14,16 @@ EmailTransport with a console dev transport), `app.server.create_app`
 (run: `uvicorn app.server:app --port 8000`; generated API docs at
 /docs and /redoc), migrations under `app/migrations/`.
 
+Zone-3 integration (ADR-0007): routes carry response models — they feed
+the OpenAPI spec the frontend's TypeScript types are generated from
+(scripts/export_openapi.py; CI fails on drift). FastAPI serves
+frontend/dist as the SPA when built (unknown /api paths still 404 as
+JSON; static/auth.html is the no-Node fallback). Emailed flow links land
+on the SPA pages (/verify, /reset), not raw JSON endpoints. The CSRF
+origin check treats loopback hosts (localhost, 127.0.0.1, [::1]) as one
+origin — found live: users browsing localhost were 403'd when base_url
+said 127.0.0.1 (regression-tested).
+
 M2 security tunables (spec left these to the implementer — recorded
 here and in app/auth/service.py): session TTL 7d; verify token TTL 24h;
 reset token TTL 1h; throttle window 15min with lockout at 5 failures
