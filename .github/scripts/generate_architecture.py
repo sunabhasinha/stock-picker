@@ -78,6 +78,9 @@ def scan_zone(zone: str):
     if not root.exists():
         return nodes, internal, cross, external, entries
 
+    if zone == "frontend":
+        return _scan_frontend(root)
+
     for path in sorted(root.rglob("*.py")):
         node = module_node(zone, path)
         if node is None:
@@ -107,6 +110,40 @@ def scan_zone(zone: str):
                     internal.add((node, target_node))
             else:
                 cross.add((node, target_zone, target_node))
+    return nodes, internal, cross, external, entries
+
+
+def _scan_frontend(root: Path):
+    """Zone 3 is TypeScript, not Python: nodes are top-level dirs under
+    src/, internal edges come from `@/pkg/...` imports, and any file that
+    calls /api or /auth is a cross-zone edge to the shell's server (the
+    OpenAPI contract, ADR-0007)."""
+    import re
+
+    nodes: set[str] = set()
+    internal: set[tuple[str, str]] = set()
+    cross: set[tuple[str, str, str]] = set()
+    external: set[tuple[str, str]] = set()
+    entries: dict[str, str] = {}
+
+    src = root / "src"
+    if not src.exists():
+        return nodes, internal, cross, external, entries
+
+    for path in sorted(src.rglob("*")):
+        if path.suffix not in (".ts", ".tsx") or path.name.endswith(".d.ts"):
+            continue
+        rel = path.relative_to(src)
+        node = rel.parts[0] if len(rel.parts) > 1 else rel.stem
+        nodes.add(node)
+        text = path.read_text(errors="replace")
+        if node == "main":
+            entries.setdefault(node, "SPA entry")
+        for match in re.findall(r'from\s+"@/([a-z]+)', text):
+            if match != node:
+                internal.add((node, match))
+        if '"/api' in text or "`/api" in text or '"/auth' in text:
+            cross.add((node, "app", "server"))
     return nodes, internal, cross, external, entries
 
 

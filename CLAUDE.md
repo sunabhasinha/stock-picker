@@ -17,7 +17,7 @@ A Python trading-signal agent built from the complete course notes of Vivek Sing
 python3 -m unittest discover -s tests -v
 ```
 
-All 186 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
+All 192 tests must pass before any PR/commit. The tests are intentionally written against specific numbers from the source doc (e.g. ICICI Lombard's real cited 30-32% decline, Angel One's actual NBFC exemption figures) — not just "reasonable-sounding" synthetic cases. If a test fails after your change, the doc section number in the test's docstring tells you exactly what rule is being enforced.
 
 ## Project structure
 
@@ -56,6 +56,12 @@ stock-picker/
 │   ├── static/auth.html       # minimal register/login page
 │   ├── migrations/            # Alembic; RLS from 0001; app_rls role from 0002
 │   └── requirements.txt       # shell-only deps (engine never imports these)
+├── frontend/                  # Zone 3 (ADR-0007): React 18 + TS strict + Vite + Tailwind
+│   ├── src/pages/             # login/register/verify/reset + authenticated Shell
+│   ├── src/components/ui/     # shadcn components, VENDORED (agents can read/edit them)
+│   ├── src/api/               # ONE fetch wrapper + schema.d.ts GENERATED from openapi.json
+│   └── MODULE.md              # incl. the owner's design principles (minimal, friendly)
+├── scripts/                   # export_openapi.py (zone contract), dev_server.py (demo mode)
 ├── config/
 │   └── v40_v40next.yaml       # Curated V40/V40Next stock lists (low-turnover, hand-maintained)
 └── tests/
@@ -79,7 +85,7 @@ stock-picker/
 
 ## What's built vs what's still needed
 
-### ✅ Done (186 tests passing)
+### ✅ Done (192 tests passing)
 - Data models (Candle, PriceSeries, Fundamentals, Signal, Universe enum)
 - V40/V40Next curated list loader
 - Fundamental screening gate (V200 hard gate + pledging disqualifier + ROCE/D-E tiering + soft flags)

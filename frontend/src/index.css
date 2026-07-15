@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+/* shadcn/ui semantic tokens (Tailwind v4 @theme) - neutral base */
+@theme {
+  --color-background: #f6f7f9;
+  --color-foreground: #1a2233;
+  --color-card: #ffffff;
+  --color-card-foreground: #1a2233;
+  --color-primary: #2456e6;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #eef1f6;
+  --color-secondary-foreground: #1a2233;
+  --color-muted: #eef1f6;
+  --color-muted-foreground: #66708a;
+  --color-destructive: #b42318;
+  --color-destructive-foreground: #ffffff;
+  --color-success: #14804a;
+  --color-border: #e3e7ee;
+  --color-input: #e3e7ee;
+  --color-ring: #2456e6;
+  --radius-lg: 0.625rem;
+  --radius-md: 0.5rem;
+}
+
+body {
+  @apply bg-background text-foreground antialiased;
+}

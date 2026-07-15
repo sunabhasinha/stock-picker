@@ -176,6 +176,26 @@ Template:
   tests (189), this entry. ADR-0007 + react-frontend spec drafted and
   awaiting the react build to ride with.
 
+## 2026-07-16 — Zone 3: React frontend foundation (ADR-0007) + design directive
+- Stepped in: yes — owner set the DESIGN DIRECTION mid-build: minimal,
+  friendly, simple flows; encoded as invariants in frontend/MODULE.md so
+  it governs all future UI sessions, not just this one
+- Agent guessed: yes — hand-scaffolded (no interactive CLIs) for
+  determinism; shadcn components vendored by hand; plain-element Label;
+  emailed flow links now land on SPA pages instead of raw JSON endpoints
+- Caught late: YES, live browser verification caught a real bug: origin
+  check 403'd localhost vs 127.0.0.1 (same machine, different origin
+  strings) — fixed with loopback equivalence + regression test. Also
+  earlier: @types/node missing for vite.config.
+- Chores: frontend/ zone (Vite+TS strict+Tailwind v4+vendored shadcn),
+  4 auth pages + Shell, ONE fetch wrapper, OpenAPI->TS generated types +
+  gen:api script + CI type-drift check, FastAPI serves dist (SPA
+  fallback; auth.html kept as no-Node fallback), demo dev_server
+  (in-memory SQLite — full loop verifiable with zero secrets), drift gate
+  + architecture generator learned zone 3 (diagram auto-discovered it),
+  6 new tests (192), MODULE.md, CLAUDE.md/ROADMAP/spec status. Live loop
+  verified in browser end to end incl. portfolio creation.
+
 ---
 
 # Reviews

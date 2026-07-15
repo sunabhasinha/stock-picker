@@ -27,10 +27,23 @@ def git(*args: str) -> str:
     ).stdout
 
 
+FRONTEND_SOURCE = (".ts", ".tsx", ".css", ".html")
+FRONTEND_EXEMPT = (
+    "frontend/src/api/schema.d.ts",  # generated from openapi.json
+    "frontend/package-lock.json",
+)
+
+
 def module_card_for(path: str) -> str | None:
     """Map a changed source file to the MODULE.md that must accompany it."""
     if path.startswith("app/") and path.endswith(".py"):
         return "app/MODULE.md"  # the application shell (ADR-0005 zone 2)
+    if (
+        path.startswith("frontend/")
+        and path.endswith(FRONTEND_SOURCE)
+        and path not in FRONTEND_EXEMPT
+    ):
+        return "frontend/MODULE.md"  # zone 3 (ADR-0007)
     if not path.startswith(f"{PACKAGE}/") or not (
         path.endswith(".py") or path.startswith(f"{PACKAGE}/static/")
     ):

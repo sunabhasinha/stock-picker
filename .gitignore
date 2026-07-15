@@ -10,3 +10,8 @@ build/
 .env
 .env.*
 !.env.example
+
+# frontend build artifacts
+node_modules/
+frontend/dist/
+frontend/openapi.json

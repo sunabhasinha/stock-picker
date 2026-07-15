@@ -29,7 +29,8 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from app.auth.emailer import ConsoleEmailTransport, EmailTransport
@@ -46,6 +47,7 @@ from sunabha_agent.portfolio.category_engine import PRESET_CATEGORIES
 
 SESSION_COOKIE = "sp_session"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
+FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
 
 
 # --- request/response bodies (also feed the generated OpenAPI docs) -------
@@ -72,6 +74,26 @@ class PasswordChange(BaseModel):
 class PortfolioCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     category_key: str = Field(max_length=40)
+
+
+# Response models: these feed the generated OpenAPI spec, which is the
+# CONTRACT with the frontend zone (ADR-0007) - TypeScript types are
+# generated from it, so shapes declared here are shapes the UI can trust.
+
+class MeOut(BaseModel):
+    id: str
+    email: str
+
+
+class PortfolioOut(BaseModel):
+    id: str
+    name: str
+    category_key: str
+    commitment_started_on: str
+
+
+class DetailOut(BaseModel):
+    detail: str
 
 
 def create_app(
@@ -128,13 +150,26 @@ def create_app(
     async def _value_error(request: Request, exc: ValueError):
         return JSONResponse({"detail": str(exc)}, status_code=400)
 
+    # localhost and 127.0.0.1 are the same machine but DIFFERENT origin
+    # strings - found live: a user browsing localhost:8000 was 403'd when
+    # base_url said 127.0.0.1:8000. Same port, loopback host = same origin
+    # for our purposes.
+    base = urlsplit(base_url)
+    loopback = {"127.0.0.1", "localhost", "[::1]"}
+    if base.hostname in loopback:
+        allowed_netlocs = {
+            f"{h}:{base.port}" if base.port else h for h in loopback
+        }
+    else:
+        allowed_netlocs = {base.netloc}
+
     @app.middleware("http")
     async def origin_check(request: Request, call_next):
         # Second CSRF line behind SameSite=Lax: browsers attach Origin to
         # unsafe cross-site requests; if present, it must be our own.
         if request.method in ("POST", "PUT", "PATCH", "DELETE"):
             origin = request.headers.get("origin")
-            if origin and urlsplit(origin).netloc != urlsplit(base_url).netloc:
+            if origin and urlsplit(origin).netloc not in allowed_netlocs:
                 return JSONResponse({"detail": "origin not allowed"},
                                     status_code=403)
         return await call_next(request)
@@ -148,12 +183,12 @@ def create_app(
 
     # --- auth routes --------------------------------------------------------
 
-    @app.post("/auth/register", status_code=202)
+    @app.post("/auth/register", status_code=202, response_model=DetailOut)
     def register(body: Credentials, service=Depends(auth_service)):
         service.register(body.email, body.password)
         return {"detail": GENERIC_FLOW_RESPONSE}
 
-    @app.get("/auth/verify")
+    @app.get("/auth/verify", response_model=DetailOut)
     def verify(token: str, service=Depends(auth_service)):
         service.verify_email(token)
         return {"detail": "email verified — you can log in now"}
@@ -173,7 +208,7 @@ def create_app(
             service.logout(token)
         response.delete_cookie(SESSION_COOKIE, path="/")
 
-    @app.post("/auth/password-reset/request", status_code=202)
+    @app.post("/auth/password-reset/request", status_code=202, response_model=DetailOut)
     def reset_request(body: EmailOnly, service=Depends(auth_service)):
         service.request_password_reset(body.email)
         return {"detail": GENERIC_FLOW_RESPONSE}
@@ -184,7 +219,7 @@ def create_app(
 
     # --- authenticated API ----------------------------------------------------
 
-    @app.get("/api/me")
+    @app.get("/api/me", response_model=MeOut)
     def me(user=Depends(current_user)):
         return {"id": str(user.id), "email": user.email}
 
@@ -193,7 +228,7 @@ def create_app(
                         service=Depends(auth_service)):
         service.change_password(user, body.current_password, body.new_password)
 
-    @app.get("/api/portfolios")
+    @app.get("/api/portfolios", response_model=list[PortfolioOut])
     def list_portfolios(user=Depends(current_user)):
         with rls_transaction(factory(), user.id) as session:
             return [
@@ -206,7 +241,7 @@ def create_app(
                 for p in Repository(session).portfolios_for_user(user.id)
             ]
 
-    @app.post("/api/portfolios", status_code=201)
+    @app.post("/api/portfolios", status_code=201, response_model=PortfolioOut)
     def create_portfolio(body: PortfolioCreate, user=Depends(current_user)):
         if body.category_key not in PRESET_CATEGORIES:
             raise HTTPException(
@@ -217,13 +252,32 @@ def create_app(
                 user.id, body.name, body.category_key, dt.date.today()
             )
             return {"id": str(portfolio.id), "name": portfolio.name,
-                    "category_key": portfolio.category_key}
+                    "category_key": portfolio.category_key,
+                    "commitment_started_on": portfolio.commitment_started_on.isoformat()}
 
-    # --- minimal pages ---------------------------------------------------------
+    # --- UI serving (ADR-0007: same-origin, FastAPI serves the built SPA) ---
 
-    @app.get("/", response_class=HTMLResponse, include_in_schema=False)
-    def index():
-        return (STATIC_DIR / "auth.html").read_text()
+    if FRONTEND_DIST.exists():
+        app.mount(
+            "/assets",
+            StaticFiles(directory=FRONTEND_DIST / "assets"),
+            name="assets",
+        )
+
+        @app.get("/{path:path}", include_in_schema=False)
+        def spa(path: str):
+            # SPA fallback: client-side routes (/login, /verify, ...) all
+            # serve index.html. Registered LAST, so real routes win; unknown
+            # API paths still 404 as JSON rather than leaking HTML.
+            if path.startswith(("api", "auth", "docs", "openapi", "redoc")):
+                return JSONResponse({"detail": "not found"}, status_code=404)
+            return FileResponse(FRONTEND_DIST / "index.html")
+    else:
+        # No frontend build present (fresh checkout without Node): fall back
+        # to the M2 placeholder page so auth remains usable.
+        @app.get("/", response_class=HTMLResponse, include_in_schema=False)
+        def index():
+            return (STATIC_DIR / "auth.html").read_text()
 
     return app
 

@@ -4,8 +4,22 @@
     {
       "name": "scan-ui",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "sunabha_agent.web", "--port", "8788"],
+      "runtimeArgs": [
+        "-m",
+        "sunabha_agent.web",
+        "--port",
+        "8788"
+      ],
       "port": 8788
+    },
+    {
+      "name": "product-demo",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "scripts/dev_server.py"
+      ],
+      "port": 8000,
+      "autoPort": true
     }
   ]
 }
